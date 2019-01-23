@@ -49,7 +49,10 @@ async def on_ready():
 
 @bot.command()
 async def qualifier(ctx, arg1):
-    # is the first arg an integer?  If not :thumbsdown: the message and let the user know.
+    # is this a channel we want to be using?
+    if check_cmd_filter(ctx.guild.id,ctx.channel.name,'qualifier'):
+        return
+
     try:
         seednum=int(arg1)
     except ValueError:
@@ -80,7 +83,9 @@ async def qualifier(ctx, arg1):
     permalink = wks2.cell(seednum, 2).value
     fscode = wks2.cell(seednum, 3).value
 
-    logger.info('Qualifier Generated - {player} - {seednum} - {verificationkey}'.format(
+    logger.info('Qualifier Generated - {servername} - {channelname} - {player} - {seednum} - {verificationkey}'.format(
+        servername = ctx.guild.name,
+        channelname = ctx.channel.name,
         player = ctx.author,
         seednum = seednum,
         verificationkey = verificationkey
@@ -105,7 +110,9 @@ async def qualifier(ctx, arg1):
         )
     )
 
-    logger.info('Qualifier DM Sent - {player} - {seednum} - {verificationkey}'.format(
+    logger.info('Qualifier DM Sent - {servername} - {channelname} - {player} - {seednum} - {verificationkey}'.format(
+        servername = ctx.guild.name,
+        channelname = ctx.channel.name,
         player = ctx.author,
         seednum = seednum,
         verificationkey = verificationkey
@@ -120,7 +127,9 @@ async def qualifier(ctx, arg1):
         ]
     )
 
-    logger.info('Qualifier Recorded in Gsheet - {player} - {seednum} - {verificationkey}'.format(
+    logger.info('Qualifier Recorded in Gsheet - {servername} - {channelname} - {player} - {seednum} - {verificationkey}'.format(
+        servername = ctx.guild.name,
+        channelname = ctx.channel.name,
         player = ctx.author,
         seednum = seednum,
         verificationkey = verificationkey
@@ -134,6 +143,17 @@ async def info_error(ctx, error):
     await ctx.send('{author}, there was a problem with your request.  Ping an admin if this condition persists.'.format(
         author=ctx.author.mention
     ))
+    logger.error('Qualifier Error - {servername} - {channelname} - {player} - {error}'.format(
+        servername = ctx.guild.name,
+        channelname = ctx.channel.name,
+        player = ctx.author,
+        error = error,
+    ))
 
+def check_cmd_filter(guildid, channelname, cmd):
+    if not channelname in config['cmd_filters']['qualifier'][guildid]:
+        return True
+    else:
+        return False  
 
 bot.run(config['discord_token'])
