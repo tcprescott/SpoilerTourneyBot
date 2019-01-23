@@ -1,0 +1,6 @@
+discord-rewrite
+pyyaml
+yarl==0.13.0
+oauth2client
+gspread
+pytz
