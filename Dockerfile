@@ -12,4 +12,4 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD ["python", "./tileroombot.py" ]
+CMD ["python", "./bot.py" ]

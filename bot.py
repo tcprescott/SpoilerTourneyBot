@@ -1,6 +1,10 @@
 import asyncio
 import sys
 from discord.ext import commands
+import discord
+
+import logging
+import logging.handlers as handlers
 
 import gspread
 import string
@@ -24,8 +28,13 @@ except FileNotFoundError:
 
 bot = commands.Bot(
     command_prefix='$',
-
 )
+
+logger = logging.getLogger('discord')
+logger.setLevel(logging.INFO)
+handler = handlers.TimedRotatingFileHandler(filename='logs/discord.log', encoding='utf-8', when='D', interval=1, backupCount=30)
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
 
 tz = timezone('EST')
 
@@ -38,9 +47,9 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-
 @bot.command()
 async def qualifier(ctx, arg1):
+    # is the first arg an integer?  If not :thumbsdown: the message and let the user know.
     try:
         seednum=int(arg1)
     except ValueError:
@@ -59,6 +68,7 @@ async def qualifier(ctx, arg1):
     wks = wb.get_worksheet(0)
     wks2 = wb.get_worksheet(1)
 
+    # does seed exist?  If not :thumbsdown: the message and let the user know.
     if wks2.cell(seednum, 1).value == '':
         await ctx.message.add_reaction('👎')
         await ctx.send('{author}, that seed does not exist.'.format(
@@ -70,15 +80,35 @@ async def qualifier(ctx, arg1):
     permalink = wks2.cell(seednum, 2).value
     fscode = wks2.cell(seednum, 3).value
 
+    logger.info('Qualifier Generated - {player} - {seednum} - {verificationkey}'.format(
+        player = ctx.author,
+        seednum = seednum,
+        verificationkey = verificationkey
+    ))
+
     dm = ctx.author.dm_channel
     if dm == None:
         dm = await ctx.author.create_dm()
 
-    await dm.send('This is the verification key that is required to be in the filename of your run:\n`{verificationkey}`\n\nSeed number: {seednum}\nFile select code: [{fscode}]\nPermalink: {permalink}\n\nYou have 15 minutes from the receipt of this DM to start you run! Good luck <:mudora:536293302689857567>'.format(
-        verificationkey=verificationkey,
-        seednum=seednum,
-        fscode=fscode,
-        permalink=permalink
+    await dm.send(
+        'This is the verification key that is required to be in the filename of your run:\n`{verificationkey}`\n\n' \
+        'Seed number: {seednum}\n' \
+        'File select code: [{fscode}]\n' \
+        'Permalink: {permalink}\n\n' \
+        'You have 15 minutes from the receipt of this DM to start you run!\n' \
+        '**Please DM an admin immediately if this was requested in error**, otherwise it may be counted as a DNF (slowest time plus 30 minutes).\n\n' \
+        'Good luck <:mudora:536293302689857567>'.format(
+            verificationkey=verificationkey,
+            seednum=seednum,
+            fscode=fscode,
+            permalink=permalink
+        )
+    )
+
+    logger.info('Qualifier DM Sent - {player} - {seednum} - {verificationkey}'.format(
+        player = ctx.author,
+        seednum = seednum,
+        verificationkey = verificationkey
     ))
 
     wks.append_row(
@@ -90,8 +120,20 @@ async def qualifier(ctx, arg1):
         ]
     )
 
+    logger.info('Qualifier Recorded in Gsheet - {player} - {seednum} - {verificationkey}'.format(
+        player = ctx.author,
+        seednum = seednum,
+        verificationkey = verificationkey
+    ))
+
     await ctx.message.add_reaction('👍')
 
+@qualifier.error
+async def info_error(ctx, error):
+    await ctx.message.add_reaction('👎')
+    await ctx.send('{author}, there was a problem with your request.  Ping an admin if this condition persists.'.format(
+        author=ctx.author.mention
+    ))
 
 
 bot.run(config['discord_token'])
