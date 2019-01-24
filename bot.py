@@ -6,7 +6,7 @@ import discord
 import logging
 import logging.handlers as handlers
 
-import gspread
+import gspread_asyncio
 import string
 import random
 from datetime import datetime
@@ -48,7 +48,7 @@ async def on_ready():
         print(e)
 
 @bot.command()
-async def qualifier(ctx, arg1):
+async def qualifier(ctx, arg1=''):
     # is this a channel we want to be using?
     if check_cmd_filter(ctx.guild.id,ctx.channel.name,'qualifier'):
         return
@@ -62,17 +62,14 @@ async def qualifier(ctx, arg1):
         ))
         return
 
-    scope = ['https://spreadsheets.google.com/feeds',
-         'https://www.googleapis.com/auth/drive']
-
-    credentials = ServiceAccountCredentials.from_json_keyfile_name('cfg/spoilertourneybot_googlecreds.json', scope)
-    gc = gspread.authorize(credentials)
-    wb = gc.open_by_key(config['gsheet_id'])
-    wks = wb.get_worksheet(0)
-    wks2 = wb.get_worksheet(1)
+    agc = await agcm.authorize()
+    wb = await agc.open_by_key(config['gsheet_id'])
+    wks = await wb.get_worksheet(0)
+    wks2 = await wb.get_worksheet(1)
 
     # does seed exist?  If not :thumbsdown: the message and let the user know.
-    if wks2.cell(seednum, 1).value == '':
+    seed = await wks2.row_values(seednum)
+    if seed[0] == '' or arg1==None:
         await ctx.message.add_reaction('👎')
         await ctx.send('{author}, that seed does not exist.'.format(
             author=ctx.author.mention
@@ -80,8 +77,8 @@ async def qualifier(ctx, arg1):
         return
 
     verificationkey = ''.join(random.choices(string.ascii_uppercase, k=4))
-    permalink = wks2.cell(seednum, 2).value
-    fscode = wks2.cell(seednum, 3).value
+    permalink = seed[1]
+    fscode = seed[2]
 
     logger.info('Qualifier Generated - {servername} - {channelname} - {player} - {seednum} - {verificationkey}'.format(
         servername = ctx.guild.name,
@@ -118,7 +115,7 @@ async def qualifier(ctx, arg1):
         verificationkey = verificationkey
     ))
 
-    wks.append_row(
+    await wks.append_row(
         [
             str(datetime.now(tz)),
             str(ctx.author),
@@ -137,23 +134,30 @@ async def qualifier(ctx, arg1):
 
     await ctx.message.add_reaction('👍')
 
-@qualifier.error
-async def info_error(ctx, error):
-    await ctx.message.add_reaction('👎')
-    await ctx.send('{author}, there was a problem with your request.  Ping an admin if this condition persists.'.format(
-        author=ctx.author.mention
-    ))
-    logger.error('Qualifier Error - {servername} - {channelname} - {player} - {error}'.format(
-        servername = ctx.guild.name,
-        channelname = ctx.channel.name,
-        player = ctx.author,
-        error = error,
-    ))
+# @qualifier.error
+# async def info_error(ctx, error):
+#     await ctx.message.add_reaction('👎')
+#     await ctx.send('{author}, there was a problem with your request.  Ping an admin if this condition persists.'.format(
+#         author=ctx.author.mention
+#     ))
+#     logger.error('Qualifier Error - {servername} - {channelname} - {player} - {error}'.format(
+#         servername = ctx.guild.name,
+#         channelname = ctx.channel.name,
+#         player = ctx.author,
+#         error = error,
+#     ))
 
 def check_cmd_filter(guildid, channelname, cmd):
     if not channelname in config['cmd_filters']['qualifier'][guildid]:
         return True
     else:
         return False  
+
+def get_creds():
+   return ServiceAccountCredentials.from_json_keyfile_name('cfg/spoilertourneybot_googlecreds.json',
+      ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive',
+      'https://www.googleapis.com/auth/spreadsheets'])
+
+agcm = gspread_asyncio.AsyncioGspreadClientManager(get_creds)
 
 bot.run(config['discord_token'])
