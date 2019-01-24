@@ -27,7 +27,7 @@ except FileNotFoundError:
     sys.exit(1)
 
 bot = commands.Bot(
-    command_prefix='$',
+    command_prefix=config['cmd_prefix'],
 )
 
 logger = logging.getLogger('discord')
