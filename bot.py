@@ -134,18 +134,18 @@ async def qualifier(ctx, arg1=''):
 
     await ctx.message.add_reaction('👍')
 
-# @qualifier.error
-# async def info_error(ctx, error):
-#     await ctx.message.add_reaction('👎')
-#     await ctx.send('{author}, there was a problem with your request.  Ping an admin if this condition persists.'.format(
-#         author=ctx.author.mention
-#     ))
-#     logger.error('Qualifier Error - {servername} - {channelname} - {player} - {error}'.format(
-#         servername = ctx.guild.name,
-#         channelname = ctx.channel.name,
-#         player = ctx.author,
-#         error = error,
-#     ))
+@qualifier.error
+async def qualifier_error(ctx, error):
+    await ctx.message.add_reaction('👎')
+    await ctx.send('{author}, there was a problem with your request.  Ping an admin if this condition persists.'.format(
+        author=ctx.author.mention
+    ))
+    logger.error('Qualifier Error - {servername} - {channelname} - {player} - {error}'.format(
+        servername = ctx.guild.name,
+        channelname = ctx.channel.name,
+        player = ctx.author,
+        error = error,
+    ))
 
 def check_cmd_filter(guildid, channelname, cmd):
     if not channelname in config['cmd_filters']['qualifier'][guildid]:
