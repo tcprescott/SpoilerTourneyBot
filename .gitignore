@@ -51,3 +51,12 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 pyz3r/__pycache__/__init__.cpython-36.pyc
+
+#virtual env
+venv/
+
+#homedir stuff
+.bash_logut
+.bash_profile
+.bashrc
+.cloud-locale-test.skip
