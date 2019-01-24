@@ -79,6 +79,7 @@ async def qualifier(ctx, arg1=''):
     verificationkey = ''.join(random.choices(string.ascii_uppercase, k=4))
     permalink = seed[1]
     fscode = seed[2]
+    timestamp = str(datetime.now(tz))
 
     logger.info('Qualifier Generated - {servername} - {channelname} - {player} - {seednum} - {verificationkey}'.format(
         servername = ctx.guild.name,
@@ -95,6 +96,7 @@ async def qualifier(ctx, arg1=''):
     await dm.send(
         'This is the verification key that is required to be in the filename of your run:\n`{verificationkey}`\n\n' \
         'Seed number: {seednum}\n' \
+        'Timestamp: {timestamp}\n' \
         'File select code: [{fscode}]\n' \
         'Permalink: {permalink}\n\n' \
         'You have 15 minutes from the receipt of this DM to start you run!\n' \
@@ -102,6 +104,7 @@ async def qualifier(ctx, arg1=''):
         'Good luck <:mudora:536293302689857567>'.format(
             verificationkey=verificationkey,
             seednum=seednum,
+            timestamp=timestamp,
             fscode=fscode,
             permalink=permalink
         )
@@ -117,7 +120,7 @@ async def qualifier(ctx, arg1=''):
 
     await wks.append_row(
         [
-            str(datetime.now(tz)),
+            timestamp,
             str(ctx.author),
             seednum,
             verificationkey
