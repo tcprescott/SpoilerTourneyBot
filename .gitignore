@@ -56,7 +56,7 @@ pyz3r/__pycache__/__init__.cpython-36.pyc
 venv/
 
 #homedir stuff
-.bash_logut
+.bash_logout
 .bash_profile
 .bashrc
 .cloud-locale-test.skip
