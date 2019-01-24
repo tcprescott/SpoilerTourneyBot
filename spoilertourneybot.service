@@ -1,0 +1,15 @@
+#This will need to be edited before use, in most cases.
+[Unit]
+Description=SpoilerTourneyBot Service
+After=multi-user.target
+
+[Service]
+User=spoilerbot
+Group=spoilerbot
+Type=idle
+WorkingDirectory=/opt/SpoilerTourneyBot
+ExecStart=/opt/SpoilerTourneyBot/venv/bin/python bot.py
+
+
+[Install]
+WantedBy=multi-user.target
