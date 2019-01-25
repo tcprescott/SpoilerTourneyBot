@@ -99,7 +99,7 @@ async def qualifier(ctx, arg1=''):
         'Timestamp: {timestamp}\n' \
         'File select code: [{fscode}]\n' \
         'Permalink: {permalink}\n\n' \
-        'You have 15 minutes from the receipt of this DM to start you run!\n' \
+        'You have 15 minutes from the receipt of this message to start your run!\n' \
         '**Please DM an admin immediately if this was requested in error**, otherwise it may be counted as a DNF (slowest time plus 30 minutes).\n\n' \
         'Good luck <:mudora:536293302689857567>'.format(
             verificationkey=verificationkey,
