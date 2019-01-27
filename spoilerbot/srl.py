@@ -6,7 +6,7 @@ import json
 async def connect(ircbot, config, loop):
     ircbot.send('NICK', nick=config['srl_irc_nickname'])
     ircbot.send('USER', user=config['srl_irc_nickname'],
-             realname='https://github.com/numberoverzero/bottom')
+             realname=config['srl_irc_nickname'])
 
     # Don't try to join channels until the server has
     # sent the MOTD, or signaled that there's no MOTD.
