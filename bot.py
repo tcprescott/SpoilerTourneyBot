@@ -12,6 +12,7 @@ import spoilerbot.qualifier as qual
 import spoilerbot.bracket as bracket
 import spoilerbot.helpers as helpers
 import spoilerbot.srl as srl
+import spoilerbot.sg as sg
 
 import re
 
@@ -59,15 +60,6 @@ async def srl_chat(ctx, arg1, arg2):
     ircbot.send('PRIVMSG', target=arg1, message=arg2)
     ircbot.send('PART', channel=arg1)
 
-async def is_open(race):
-    try:
-        if race['state'] == 1:
-            return True
-        else:
-            return False
-    except KeyError:
-        return False
-
 #restreamrace command
 @discordbot.command()
 async def restreamrace(ctx, arg1=None, arg2=None):
@@ -83,11 +75,40 @@ async def restreamrace(ctx, arg1=None, arg2=None):
         race = await srl.get_race(raceid)
     else:
         await ctx.message.add_reaction('👎')
-        await ctx.send('{author}, that doesn\'t look like an SRL race.'.format(
+        await ctx.send('{author}, that doesn\'t look like an SRL race room.'.format(
             author=ctx.author.mention
         ))
         return
-    print(await is_open(race))
+    if not await srl.is_race_open(race):
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, that race does not exist or is not in an "Entry Open" state.'.format(
+            author=ctx.author.mention
+        ))
+        return
+
+    # participants = await sg.get_participants(arg1)
+    participants = ['Synack#1377']
+    if participants == False:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, that episode doesn\'t appear to exist.'.format(
+            author=ctx.author.mention
+        ))
+        return
+    
+    for user in participants:
+        u = ctx.guild.get_member_named(user)
+        if u == None:
+            #log this at sometime, for now just skip
+            pass
+        dm = u.dm_channel
+        if dm == None:
+            dm = await u.create_dm()
+        await dm.send(
+            'test',
+        )
+
+    
+    await ctx.message.add_reaction('👍')
     # call SRL gatekeeper coroutine
     # await srl.gatekeeper(
     #     ircbot=ircbot,

@@ -86,3 +86,12 @@ async def wait_for_ready_up(raceid, config):
 
         if readycount>=2:
             return
+
+async def is_race_open(race):
+    try:
+        if race['state'] == 1:
+            return True
+        else:
+            return False
+    except KeyError:
+        return False
