@@ -4,13 +4,17 @@ import logging.handlers as handlers
 import gspread_asyncio
 
 import spoilerbot.helpers as helpers
+import spoilerbot.database as db
 
 import string
 import random
 from datetime import datetime
 from pytz import timezone
 
-async def qualifier_cmd(ctx, arg1, config, logger):
+import spoilerbot.config as cfg
+config = cfg.get_config()
+
+async def qualifier_cmd(ctx, arg1, logger, loop):
     tz = timezone('EST')
     logger.info('Qualifier Requested - {servername} - {channelname} - {player} - {seednum}'.format(
         servername = ctx.guild.name,
@@ -30,37 +34,14 @@ async def qualifier_cmd(ctx, arg1, config, logger):
         ))
         return
 
-    logger.info('Qualifier gsheet init - {servername} - {channelname} - {player} - {seednum}'.format(
-        servername = ctx.guild.name,
-        channelname = ctx.channel.name,
-        player = ctx.author,
-        seednum = seednum,
-    ))
-    agcm = gspread_asyncio.AsyncioGspreadClientManager(helpers.get_creds)
-    agc = await agcm.authorize()
-    wb = await agc.open_by_key(config['gsheet_id'])
-    wks = await wb.get_worksheet(0)
-    wks2 = await wb.get_worksheet(1)
-
-    logger.info('Qualifier gsheet init finished - {servername} - {channelname} - {player} - {seednum}'.format(
-        servername = ctx.guild.name,
-        channelname = ctx.channel.name,
-        player = ctx.author,
-        seednum = seednum,
-    ))
-
-    # does seed exist?  If not :thumbsdown: the message and let the user know.
-    seed = await wks2.row_values(seednum)
-    if seed[0] == '' or arg1==None:
-        await ctx.message.add_reaction('👎')
-        await ctx.send('{author}, that seed does not exist.'.format(
-            author=ctx.author.mention
-        ))
-        return
+    spdb = db.SpoilerBotDatabase(loop)
+    await spdb.connect()
+    qualifier_seed = await spdb.get_qualifier_seed(seednum)
+    await spdb.close()
 
     verificationkey = ''.join(random.choices(string.ascii_uppercase, k=4))
-    permalink = seed[1]
-    fscode = seed[2]
+    permalink = qualifier_seed[1]
+    fscode = qualifier_seed[2]
     timestamp = str(datetime.now(tz))
 
     logger.info('Qualifier Generated - {servername} - {channelname} - {player} - {seednum} - {verificationkey}'.format(
@@ -99,6 +80,11 @@ async def qualifier_cmd(ctx, arg1, config, logger):
         seednum = seednum,
         verificationkey = verificationkey
     ))
+
+    agcm = gspread_asyncio.AsyncioGspreadClientManager(helpers.get_creds)
+    agc = await agcm.authorize()
+    wb = await agc.open_by_key(config['gsheet_id'])
+    wks = await wb.get_worksheet(0)
 
     await wks.append_row(
         [

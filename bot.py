@@ -14,6 +14,8 @@ import spoilerbot.helpers as helpers
 import spoilerbot.srl as srl
 import spoilerbot.sg as sg
 
+import pyz3r_asyncio
+
 import re
 
 config = cfg.get_config()
@@ -51,7 +53,29 @@ async def on_ready():
 
 @discordbot.command()
 async def test(ctx, arg1=None):
-    pass
+    seed = await pyz3r_asyncio.create_seed(
+        randomizer='item', # optional, defaults to item
+        baseurl='https://spoilertourney.the-synack.com',
+        seed_baseurl='https://spoilertourney.the-synack.com/hash',
+        append_json_extension=False,
+        settings={
+            "difficulty": "normal",
+            "enemizer": False,
+            "logic": "NoGlitches",
+            "mode": "open",
+            "spoilers": False,
+            "tournament": True,
+            "variation": "none",
+            "weapons": "randomized",
+            "lang": "en"
+        }
+    )
+    print("Permalink: {url}".format(
+        url = await seed.url()
+    ))
+    print("Hash: [{hash}]".format(
+        hash = ' | '.join(await seed.code())
+    ))
 
 # make sure that admins can only do this in the public version of the bot!
 @discordbot.command()
@@ -63,59 +87,7 @@ async def srl_chat(ctx, arg1, arg2):
 #restreamrace command
 @discordbot.command()
 async def restreamrace(ctx, arg1=None, arg2=None):
-    if arg1==None or arg2==None:
-        await ctx.message.add_reaction('👎')
-        await ctx.send('{author}, you need both the race id and srl room specified.'.format(
-            author=ctx.author.mention
-        ))
-        return
-    if re.search('^#srl-[a-z0-9]{5}$',arg2):
-        raceid = arg2.partition('-')[-1]
-        channel = arg2
-        race = await srl.get_race(raceid)
-    else:
-        await ctx.message.add_reaction('👎')
-        await ctx.send('{author}, that doesn\'t look like an SRL race room.'.format(
-            author=ctx.author.mention
-        ))
-        return
-    if not await srl.is_race_open(race):
-        await ctx.message.add_reaction('👎')
-        await ctx.send('{author}, that race does not exist or is not in an "Entry Open" state.'.format(
-            author=ctx.author.mention
-        ))
-        return
-
-    # participants = await sg.get_participants(arg1)
-    participants = ['Synack#1377']
-    if participants == False:
-        await ctx.message.add_reaction('👎')
-        await ctx.send('{author}, that episode doesn\'t appear to exist.'.format(
-            author=ctx.author.mention
-        ))
-        return
-    
-    for user in participants:
-        u = ctx.guild.get_member_named(user)
-        if u == None:
-            #log this at sometime, for now just skip
-            pass
-        dm = u.dm_channel
-        if dm == None:
-            dm = await u.create_dm()
-        await dm.send(
-            'test',
-        )
-
-    
-    await ctx.message.add_reaction('👍')
-    # call SRL gatekeeper coroutine
-    # await srl.gatekeeper(
-    #     ircbot=ircbot,
-    #     channel=channel,
-    #     spoilerlogurl=''
-    # )
-
+    await bracket.restreamrace(ctx, arg1, arg2)
 
 #qualifier command, this has been condensed and relocated to the spoilerbot/qualifier.py
 @discordbot.command()
@@ -123,14 +95,14 @@ async def qualifier(ctx, arg1=''):
     await qual.qualifier_cmd(
         ctx=ctx,
         arg1=arg1,
-        config=config,
+        loop=loop,
         logger=logger
     )
     
 #handle errors, use our standard error handler to simplify things
-@qualifier.error
-async def qualifier_error(ctx, error):
-    await helpers.error_handle(ctx, error, logger, 'qualifier')
+# @qualifier.error
+# async def qualifier_error(ctx, error):
+#     await helpers.error_handle(ctx, error, logger, 'qualifier')
 
 
 @ircbot.on('CLIENT_CONNECT')
