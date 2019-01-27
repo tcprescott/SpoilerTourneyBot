@@ -3,8 +3,12 @@ import sys
 from discord.ext import commands
 import discord
 
+import bottom
+
 import logging
 import logging.handlers as handlers
+
+import math
 
 import gspread_asyncio
 import string
@@ -26,9 +30,11 @@ except FileNotFoundError:
     print('cfg/config.yaml does not exist!')
     sys.exit(1)
 
-bot = commands.Bot(
+discordbot = commands.Bot(
     command_prefix=config['cmd_prefix'],
 )
+
+ircbot = bottom.Client(host='irc.speedrunslive.com', port=6667, ssl=False)
 
 logger = logging.getLogger('discord')
 logger.setLevel(logging.INFO)
@@ -38,18 +44,42 @@ logger.addHandler(handler)
 
 tz = timezone('EST')
 
-@bot.event
+@discordbot.event
 async def on_ready():
     try:
-        print(bot.user.name)
-        print(bot.user.id)
+        print(discordbot.user.name)
+        print(discordbot.user.id)
 
     except Exception as e:
         print(e)
 
-@bot.command()
+@discordbot.command()
+async def restreamrace(ctx, arg1=None, arg2=None):
+    if arg1==None or arg2==None:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, you need both the race id and srl room specified.'.format(
+            author=ctx.author.mention
+        ))
+        return
+    # ircbot.join(arg2)
+    await asyncio.sleep(10)
+    ircbot.send('PRIVMSG', target=arg2, message='.setgoal BOT TESTING - Please do not join!')
+    ircbot.send('PRIVMSG', target=arg2, message='.join')
+    await asyncio.sleep(30)
+    ircbot.send('PRIVMSG', target=arg2, message='This race\'s spoiler log: https://example.com/spoiler/something.txt')
+    await countdown_timer(900, arg2)
+    ircbot.send('PRIVMSG', target=arg2, message='.quit')
+
+
+@discordbot.command()
 async def qualifier(ctx, arg1=''):
     # is this a channel we want to be using?
+    logger.info('Qualifier Requested - {servername} - {channelname} - {player} - {seednum}'.format(
+        servername = ctx.guild.name,
+        channelname = ctx.channel.name,
+        player = ctx.author,
+        seednum = arg1,
+    ))
     if check_cmd_filter(ctx.guild.id,ctx.channel.name,'qualifier'):
         return
 
@@ -62,10 +92,24 @@ async def qualifier(ctx, arg1=''):
         ))
         return
 
+    logger.info('Qualifier gsheet init - {servername} - {channelname} - {player} - {seednum}'.format(
+        servername = ctx.guild.name,
+        channelname = ctx.channel.name,
+        player = ctx.author,
+        seednum = seednum,
+    ))
+    agcm = gspread_asyncio.AsyncioGspreadClientManager(get_creds)
     agc = await agcm.authorize()
     wb = await agc.open_by_key(config['gsheet_id'])
     wks = await wb.get_worksheet(0)
     wks2 = await wb.get_worksheet(1)
+
+    logger.info('Qualifier gsheet init finished - {servername} - {channelname} - {player} - {seednum}'.format(
+        servername = ctx.guild.name,
+        channelname = ctx.channel.name,
+        player = ctx.author,
+        seednum = seednum,
+    ))
 
     # does seed exist?  If not :thumbsdown: the message and let the user know.
     seed = await wks2.row_values(seednum)
@@ -151,16 +195,95 @@ async def qualifier_error(ctx, error):
     ))
 
 def check_cmd_filter(guildid, channelname, cmd):
-    if not channelname in config['cmd_filters']['qualifier'][guildid]:
+    if not channelname in config['cmd_filters'][cmd][guildid]:
         return True
     else:
-        return False  
+        return False
 
 def get_creds():
    return ServiceAccountCredentials.from_json_keyfile_name('cfg/spoilertourneybot_googlecreds.json',
       ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive',
       'https://www.googleapis.com/auth/spreadsheets'])
 
-agcm = gspread_asyncio.AsyncioGspreadClientManager(get_creds)
+async def countdown_timer(duration_in_seconds, srl_channel):
+    reminders = [900,600,300,120,60,30,10,9,8,7,6,5,4,3,2,1]
+    start_time = loop.time()
+    end_time = loop.time() + duration_in_seconds
+    while True:
+        # print(datetime.datetime.now())
+        timeleft = math.ceil(start_time - loop.time() + duration_in_seconds)
+        # print(timeleft)
+        if timeleft in reminders:
+            minutes = math.floor(timeleft/60)
+            seconds = math.ceil(timeleft % 60)
+            if minutes == 0:
+                msg = '{seconds} second(s) are remaining!'.format(
+                    seconds=seconds
+                )
+            else:
+                msg = '{minutes} minute(s), {seconds} second(s) are remaining!'.format(
+                    minutes=minutes,
+                    seconds=seconds
+                )
+            ircbot.send('PRIVMSG', target=srl_channel, message=msg)
+            reminders.remove(timeleft)
+        if (loop.time() + 1) >= end_time:
+            break
+        await asyncio.sleep(.5)
 
-bot.run(config['discord_token'])
+
+@ircbot.on('CLIENT_CONNECT')
+async def connect(**kwargs):
+    ircbot.send('NICK', nick=config['srl_irc_nickname'])
+    ircbot.send('USER', user=config['srl_irc_nickname'],
+             realname='https://github.com/numberoverzero/bottom')
+
+    # Don't try to join channels until the server has
+    # sent the MOTD, or signaled that there's no MOTD.
+    done, pending = await asyncio.wait(
+        [ircbot.wait("RPL_ENDOFMOTD"),
+         ircbot.wait("ERR_NOMOTD")],
+        loop=loop,
+        return_when=asyncio.FIRST_COMPLETED
+    )
+
+    #raw command because I can't seem to get this to work with send()
+    ircbot.send('PRIVMSG', target='NICKSERV', message='identify ' + config['srl_irc_password'])
+
+    # Cancel whichever waiter's event didn't come in.
+    for future in pending:
+        future.cancel()
+
+    ircbot.send('JOIN', channel='#speedrunslive')
+
+# this is a pretty low level library, so yea
+@ircbot.on('PING')
+def keepalive(message, **kwargs):
+    ircbot.send('PONG', message=message)
+
+
+# for testing, this ircbot will actually only be sending messages
+# @ircbot.on('PRIVMSG')
+# def message(nick, target, message, **kwargs):
+#     """ Echo all messages """
+
+#     # Don't echo ourselves
+#     if nick == NICK:
+#         return
+#     # Respond directly to direct messages
+#     if target == NICK:
+#         print(message)
+#     # Channel message
+#     else:
+#         print(message)
+
+@ircbot.on('NOTICE')
+def notice(message, **kwargs):
+    print(message)
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.create_task(discordbot.start(config['discord_token']))
+    loop.create_task(ircbot.connect())
+    # loop.create_task(countdown_timer(900))
+    loop.run_forever()
