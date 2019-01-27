@@ -1,4 +1,7 @@
 import asyncio
+import re
+import aiohttp
+import json
 
 async def connect(ircbot, config, loop):
     ircbot.send('NICK', nick=config['srl_irc_nickname'])
@@ -22,3 +25,64 @@ async def connect(ircbot, config, loop):
         future.cancel()
 
     ircbot.send('JOIN', channel='#speedrunslive')
+
+async def gatekeeper(ircbot, channel, raceid, spoilerlogurl):
+    ircbot.send('JOIN', channel=channel)
+    await asyncio.sleep(2)
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal BOT TESTING - Please do not join!')
+    ircbot.send('PRIVMSG', target=channel, message='.join')
+    await wait_for_ready_up(raceid)
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal BOT TESTING - Please do not join! - Pre-race study IN PROGRESS')
+    await asyncio.sleep(5)
+    ircbot.send('PRIVMSG', target=channel, message='---------------')
+    ircbot.send('PRIVMSG', target=channel, message='This race\'s spoiler log: https://example.com/spoiler/something.txt')
+    ircbot.send('PRIVMSG', target=channel, message='---------------')
+    await helpers.countdown_timer(
+        duration_in_seconds=61,
+        srl_channel=channel,
+        loop=loop,
+        ircbot=ircbot
+    )
+    ircbot.send('PRIVMSG', target=channel, message='GLHF! :mudora:')
+    ircbot.send('PRIVMSG', target=channel, message='.quit')
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal BOT TESTING - Please do not join!')
+    ircbot.send('PART', channel=channel)
+
+async def get_race(raceid):
+    async with aiohttp.ClientSession() as session:
+        async with session.get('http://api.speedrunslive.com/races/' + raceid) as response:
+            raw = await response.text()
+            return json.loads(raw)
+
+async def are_ready(raceid, config):
+    race = await get_race(raceid)
+    readycount=0
+    entrants = race['entrants']
+    try:
+        del entrants[config['srl_irc_nickname'].lower()]
+    except KeyError:
+        pass
+    try:
+        del entrants['JOPEBUSTER']
+    except KeyError:
+        pass
+    for entrant in entrants:
+        if race['entrants'][entrant]['statetext'] == 'Ready':
+            readycount=readycount+1
+    if readycount==len(entrants):
+        return True
+    else:
+        return False
+
+async def wait_for_ready_up(raceid, config):
+    readycount = 0
+    while True:
+        if await are_ready(raceid):
+            readycount=readycount+1
+            await asyncio.sleep(2)
+        else:
+            readycount=0
+            await asyncio.sleep(10)
+
+        if readycount>=2:
+            return
