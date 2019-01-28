@@ -26,16 +26,26 @@ async def connect(ircbot, config, loop):
 
     ircbot.send('JOIN', channel='#speedrunslive')
 
-async def gatekeeper(ircbot, channel, raceid, spoilerlogurl):
+async def gatekeeper(ircbot, channel, raceid, spoilerlogurl, players, permalink, loop):
     ircbot.send('JOIN', channel=channel)
     await asyncio.sleep(2)
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal BOT TESTING - Please do not join!')
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {player1} vs. {player2} - {permalink}'.format(
+        player1=players[0],
+        player2=players[1],
+        permalink=permalink,
+    ))
     ircbot.send('PRIVMSG', target=channel, message='.join')
     await wait_for_ready_up(raceid)
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal BOT TESTING - Please do not join! - Pre-race study IN PROGRESS')
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {player1} vs. {player2} - {permalink} - Log Study In Progress'.format(
+        player1=players[0],
+        player2=players[1],
+        permalink=permalink,
+    ))
     await asyncio.sleep(5)
     ircbot.send('PRIVMSG', target=channel, message='---------------')
-    ircbot.send('PRIVMSG', target=channel, message='This race\'s spoiler log: https://example.com/spoiler/something.txt')
+    ircbot.send('PRIVMSG', target=channel, message='This race\'s spoiler log: {spoilerurl}'.format(
+        spoilerurl=spoilerlogurl
+    ))
     ircbot.send('PRIVMSG', target=channel, message='---------------')
     await helpers.countdown_timer(
         duration_in_seconds=61,
@@ -45,7 +55,11 @@ async def gatekeeper(ircbot, channel, raceid, spoilerlogurl):
     )
     ircbot.send('PRIVMSG', target=channel, message='GLHF! :mudora:')
     ircbot.send('PRIVMSG', target=channel, message='.quit')
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal BOT TESTING - Please do not join!')
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {player1} vs. {player2} - {permalink}'.format(
+        player1=players[0],
+        player2=players[1],
+        permalink=permalink,
+    ))
     ircbot.send('PART', channel=channel)
 
 async def get_race(raceid):
@@ -69,7 +83,7 @@ async def are_ready(raceid, config):
     for entrant in entrants:
         if race['entrants'][entrant]['statetext'] == 'Ready':
             readycount=readycount+1
-    if readycount==len(entrants):
+    if readycount==len(entrants) and len(entrants) >= 2:
         return True
     else:
         return False

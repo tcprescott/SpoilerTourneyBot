@@ -1,7 +1,18 @@
 import re
 import spoilerbot.srl as srl
+import spoilerbot.sg as sg
+import spoilerbot.database as db
 
-async def restreamrace(ctx, arg1=None, arg2=None):
+import random, string
+
+import pyz3r_asyncio
+
+import json
+
+import spoilerbot.config as cfg
+config = cfg.get_config()
+
+async def restreamrace(ctx, loop, arg1=None, arg2=None):
     if arg1==None or arg2==None:
         await ctx.message.add_reaction('👎')
         await ctx.send('{author}, you need both the race id and srl room specified.'.format(
@@ -25,8 +36,15 @@ async def restreamrace(ctx, arg1=None, arg2=None):
     #     ))
     #     return
 
-    # participants = await sg.get_participants(arg1)
-    participants = ['Synack#1337']
+    sge = await sg.find_episode(arg1)
+    # participants = await sge.get_participants_discord()
+    players = await sge.get_player_names()
+    participants = []
+    participants.append(ctx.author.name + '#' + ctx.author.discriminator)
+
+    #filter out duplicates
+    participants = list(set(participants))
+
     if participants == False:
         await ctx.message.add_reaction('👎')
         await ctx.send('{author}, that episode doesn\'t appear to exist.'.format(
@@ -34,6 +52,50 @@ async def restreamrace(ctx, arg1=None, arg2=None):
         ))
         return
     
+    seed = await pyz3r_asyncio.create_seed(
+        randomizer='item', # optional, defaults to item
+        baseurl=config['alttpr_website']['baseurl'],
+        seed_baseurl=config['alttpr_website']['baseurl_seed'],
+        append_json_extension=False,
+        settings={
+            "difficulty": "normal",
+            "enemizer": False,
+            "logic": "NoGlitches",
+            "mode": "open",
+            "tournament": False,
+            "variation": "none",
+            "weapons": "randomized",
+            "lang": "en"
+        }
+    )
+
+    rdb = db.RandomizerDatabase(loop)
+    await rdb.connect()
+    spoiler_log = await rdb.get_seed_spoiler(seed.hash)
+    await rdb.close()
+
+    spoiler_log_url = await write_json_to_disk(spoiler_log[0], seed.hash)
+    print(spoiler_log_url)
+
+    spdb = db.SpoilerBotDatabase(loop)
+    await spdb.connect()
+    await spdb.record_bracket_race(
+        sg_episode_id=arg1,
+        srl_race_id=raceid,
+        hash=seed.hash,
+        player1=players[0],
+        player2=players[1],
+        permalink=await seed.url(),
+        spoiler_url=spoiler_log_url,
+        initiated_by=ctx.author.name + '#' + ctx.author.discriminator,
+    )
+    await spdb.close()
+
+    msg = await generate_bracket_dm(
+        seed=seed,
+        players=players,
+        channel=channel,
+        )
     for user in participants:
         u = ctx.guild.get_member_named(user)
         if u == None:
@@ -43,14 +105,41 @@ async def restreamrace(ctx, arg1=None, arg2=None):
             dm = u.dm_channel
             if dm == None:
                 dm = await u.create_dm()
-            await dm.send(
-                'test',
-            )
+            await dm.send(msg)
     
     await ctx.message.add_reaction('👍')
     # call SRL gatekeeper coroutine
     # await srl.gatekeeper(
     #     ircbot=ircbot,
     #     channel=channel,
-    #     spoilerlogurl=''
+    #     spoilerlogurl=spoiler_log_url,
+    #     players=players,
+    #     permalink=permalink,
+    #     loop=loop
     # )
+
+async def generate_bracket_dm(seed, players, channel):
+    msg = 'Details for race {player1} vs {player2}:\n\n' \
+    'SRL Channel: {srlchannel}\n' \
+    'Permalink: {permalink}\n' \
+    'Code: [{fscode}]\n\n' \
+    'The bot will provide the spoiler log in SRL chat once all joined players have readied up.\n' \
+    'At that point a link to the spoiler log and a 15 minute countdown timer will commence.\n\n' \
+    'Good luck <:mudora:536293302689857567>'.format(
+        player1=players[0],
+        player2=players[1],
+        srlchannel=channel,
+        permalink=await seed.url(),
+        fscode=' | '.join(await seed.code()))
+    return msg
+
+async def write_json_to_disk(spoiler, hash):
+    filename = 'spoilertourneylog__' + hash + '__' + ''.join(random.choices(string.ascii_letters + string.digits, k=6)) + '.txt'
+    spoilerdatafile = open(config['spoiler_log_local'] + filename, "w")
+    # magic happens here to make it pretty-printed
+    s = json.loads(spoiler)
+    del s['meta']['_meta']
+    del s['playthrough']
+    spoilerdatafile.write(json.dumps(s, indent=4, sort_keys=True))
+    spoilerdatafile.close()
+    return config['spoiler_log_url_base'] + '/' + filename

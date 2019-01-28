@@ -81,7 +81,7 @@ class alttpr():
             raise alttprException("randomizer must be \"item\" or \"entrance\"")
 
         if self.settings == None and self.hash==None:
-            self.data=None
+            self.patchdata=None
         else:
             if self.settings:
                 if self.randomizer == 'item':
@@ -93,17 +93,17 @@ class alttpr():
                     json=self.settings,
                 )
                 #override whatever hash was provided and instead use what was gen'd
-                hash=json.loads(data)['hash']
+                self.hash=json.loads(data)['hash']
                 await asyncio.sleep(1)
 
             if self.append_json_extension:
-                url=self.seed_baseurl + '/' + hash + '.json'
+                url=self.seed_baseurl + '/' + self.hash + '.json'
             else:
-                url=self.seed_baseurl + '/' + hash
-            req = await async_req_general(
+                url=self.seed_baseurl + '/' + self.hash
+            req, data = await async_req_general(
                 url=url
             )
-            self.data = json.loads(data)
+            self.patchdata = json.loads(data)
 
     async def settings(self):
         if self.randomizer == 'item':
@@ -118,7 +118,7 @@ class alttpr():
 
 
     async def code(self):
-        if not self.data:
+        if not self.patchdata:
             raise alttprException('Please specify a seed or hash first to generate or retrieve a game.')
         
         code_map = {
@@ -132,7 +132,7 @@ class alttpr():
             29: 'Map', 30: 'Compass', 31: 'Big Key'
         }
 
-        for patch in self.data['patch']:
+        for patch in self.patchdata['patch']:
             seek = '1573395'
             if seek in patch:
                 p=list(map(lambda x: code_map[x], patch[seek][2:]))
@@ -140,20 +140,20 @@ class alttpr():
 
 
     async def url(self):
-        if not self.data:
+        if not self.patchdata:
             raise alttprException('Please specify a seed or hash first to generate or retrieve a game.')
 
         return '{baseurl}/h/{hash}'.format(
             baseurl = self.baseurl,
-            hash = self.data['hash']
+            hash = self.patchdata['hash']
         )
 
 
     async def get_hash(self):
-        if not self.data:
+        if not self.patchdata:
             raise alttprException('Please specify a seed or hash first to generate or retrieve a game.')
 
-        return self.data['hash']
+        return self.patchdata['hash']
 
 
     async def get_patch_base(self):
@@ -233,7 +233,7 @@ class alttpr():
             spritename='Link',
             music=True
         ):
-        if not self.data:
+        if not self.patchdata:
             raise alttprException('Please specify a seed or hash first to generate or retrieve a game.')
 
         #expand the ROM to size requested in seed_data
@@ -248,7 +248,7 @@ class alttpr():
         #apply the seed-specific changes
         patchrom_array = await self.patch(
             rom=patchrom_array,
-            patches=await self.data['patch']
+            patches=await self.patchdata['patch']
         )
 
         #apply the heart speed change
@@ -373,7 +373,7 @@ class alttpr():
         if newlenmb:
             newlen = newlenmb * 1024 * 1024
         else:
-            newlen = self.data['size'] * 1024 * 1024
+            newlen = self.patchdata['size'] * 1024 * 1024
         if len(rom) > newlen:
             raise alttprException('ROM is already larger than {bytes}'.format(
                 bytes=newlen

@@ -25,7 +25,7 @@ discordbot = commands.Bot(
     command_prefix=config['cmd_prefix'],
 )
 
-# irc bot using bottom, an very low level async irc client
+# irc bot using bottom, an very, very low level async irc client
 ircbot = bottom.Client(
     host='irc.speedrunslive.com',
     port=6667,
@@ -87,7 +87,7 @@ async def srl_chat(ctx, arg1, arg2):
 #restreamrace command
 @discordbot.command()
 async def restreamrace(ctx, arg1=None, arg2=None):
-    await bracket.restreamrace(ctx, arg1, arg2)
+    await bracket.restreamrace(ctx=ctx, arg1=arg1, arg2=arg2, loop=loop)
 
 #qualifier command, this has been condensed and relocated to the spoilerbot/qualifier.py
 @discordbot.command()
@@ -100,9 +100,9 @@ async def qualifier(ctx, arg1=''):
     )
     
 #handle errors, use our standard error handler to simplify things
-# @qualifier.error
-# async def qualifier_error(ctx, error):
-#     await helpers.error_handle(ctx, error, logger, 'qualifier')
+@qualifier.error
+async def qualifier_error(ctx, error):
+    await helpers.error_handle(ctx, error, logger, 'qualifier')
 
 
 @ircbot.on('CLIENT_CONNECT')

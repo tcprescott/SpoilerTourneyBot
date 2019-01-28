@@ -11,6 +11,8 @@ import random
 from datetime import datetime
 from pytz import timezone
 
+import pyz3r_asyncio
+
 import spoilerbot.config as cfg
 config = cfg.get_config()
 
@@ -39,9 +41,24 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
     qualifier_seed = await spdb.get_qualifier_seed(seednum)
     await spdb.close()
 
+    if qualifier_seed == None:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, that seed does not exist.'.format(
+            author=ctx.author.mention
+        ))
+        return
+
+    seed = await pyz3r_asyncio.create_seed(
+        randomizer='item',
+        baseurl=config['alttpr_website']['baseurl'],
+        seed_baseurl=config['alttpr_website']['baseurl_seed'],
+        append_json_extension=False,
+        hash=qualifier_seed[0]
+    )
+
     verificationkey = ''.join(random.choices(string.ascii_uppercase, k=4))
-    permalink = qualifier_seed[1]
-    fscode = qualifier_seed[2]
+    permalink = await seed.url()
+    fscode = ' | '.join(await seed.code())
     timestamp = str(datetime.now(tz))
 
     logger.info('Qualifier Generated - {servername} - {channelname} - {player} - {seednum} - {verificationkey}'.format(
