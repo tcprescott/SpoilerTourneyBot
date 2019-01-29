@@ -13,6 +13,8 @@ from pytz import timezone
 
 import pyz3r_asyncio
 
+import urllib.parse
+
 import spoilerbot.config as cfg
 config = cfg.get_config()
 
@@ -79,6 +81,7 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
         'Timestamp: {timestamp}\n' \
         'File select code: [{fscode}]\n' \
         'Permalink: {permalink}\n\n' \
+        'Submit your run here once completed: <{submiturl}>\n\n'
         'You have 15 minutes from the receipt of this message to start your run!\n' \
         '**Please DM an admin immediately if this was requested in error**, otherwise it may be counted as a DNF (slowest time plus 30 minutes).\n\n' \
         'Good luck <:mudora:536293302689857567>'.format(
@@ -86,7 +89,12 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
             seednum=seednum,
             timestamp=timestamp,
             fscode=fscode,
-            permalink=permalink
+            permalink=permalink,
+            submiturl=config['qualifier_form_prefill'].format(
+                discordtag=urllib.parse.quote_plus(ctx.author.name + '#' + ctx.author.discriminator),
+                verificationkey=verificationkey,
+                seednum=seednum
+            )
         )
     )
 
@@ -108,8 +116,13 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
             timestamp,
             str(ctx.author),
             seednum,
-            verificationkey
-        ]
+            verificationkey,
+            "=INDEX('Submitted Runs'!E:G,MATCH(INDIRECT(\"R[0]C[-1]\", false),'Submitted Runs'!C:C,0), 1)*3600+INDEX('Submitted Runs'!E:G,MATCH(INDIRECT(\"R[0]C[-1]\", false),'Submitted Runs'!C:C,0), 2)*60+INDEX('Submitted Runs'!E:G,MATCH(INDIRECT(\"R[0]C[-1]\", false),'Submitted Runs'!C:C,0), 3)",
+            "=INDEX('Submitted Runs'!H:H,MATCH(INDIRECT(\"R[0]C[-2]\", false),'Submitted Runs'!C:C,0), 1)",
+            "=INDEX('Submitted Runs'!I:I,MATCH(INDIRECT(\"R[0]C[-3]\", false),'Submitted Runs'!C:C,0), 1)",
+            "=INDEX('Submitted Runs'!J:J,MATCH(INDIRECT(\"R[0]C[-4]\", false),'Submitted Runs'!C:C,0), 1)"
+        ],
+        value_input_option='USER_ENTERED'
     )
 
     logger.info('Qualifier Recorded in Gsheet - {servername} - {channelname} - {player} - {seednum} - {verificationkey}'.format(

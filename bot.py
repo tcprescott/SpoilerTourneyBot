@@ -100,9 +100,9 @@ async def qualifier(ctx, arg1=''):
     )
     
 #handle errors, use our standard error handler to simplify things
-@qualifier.error
-async def qualifier_error(ctx, error):
-    await helpers.error_handle(ctx, error, logger, 'qualifier')
+# @qualifier.error
+# async def qualifier_error(ctx, error):
+#     await helpers.error_handle(ctx, error, logger, 'qualifier')
 
 
 @ircbot.on('CLIENT_CONNECT')
