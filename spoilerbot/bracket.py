@@ -9,10 +9,12 @@ import pyz3r_asyncio
 
 import json
 
+import aiofiles
+
 import spoilerbot.config as cfg
 config = cfg.get_config()
 
-async def restreamrace(ctx, loop, arg1=None, arg2=None):
+async def restreamrace(ctx, loop, ircbot, arg1=None, arg2=None):
     if arg1==None or arg2==None:
         await ctx.message.add_reaction('👎')
         await ctx.send('{author}, you need both the race id and srl room specified.'.format(
@@ -22,24 +24,23 @@ async def restreamrace(ctx, loop, arg1=None, arg2=None):
     if re.search('^#srl-[a-z0-9]{5}$',arg2):
         raceid = arg2.partition('-')[-1]
         channel = arg2
-        race = await srl.get_race(raceid)
     else:
         await ctx.message.add_reaction('👎')
         await ctx.send('{author}, that doesn\'t look like an SRL race room.'.format(
             author=ctx.author.mention
         ))
         return
-    # if not await srl.is_race_open(race):
-    #     await ctx.message.add_reaction('👎')
-    #     await ctx.send('{author}, that race does not exist or is not in an "Entry Open" state.'.format(
-    #         author=ctx.author.mention
-    #     ))
-    #     return
+    if not await srl.is_race_open(raceid):
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, that race does not exist or is not in an "Entry Open" state.'.format(
+            author=ctx.author.mention
+        ))
+        return
 
     sge = await sg.find_episode(arg1)
-    # participants = await sge.get_participants_discord()
+    participants = await sge.get_participants_discord()
     players = await sge.get_player_names()
-    participants = []
+    # participants = []
     participants.append(ctx.author.name + '#' + ctx.author.discriminator)
 
     #filter out duplicates
@@ -109,14 +110,17 @@ async def restreamrace(ctx, loop, arg1=None, arg2=None):
     
     await ctx.message.add_reaction('👍')
     # call SRL gatekeeper coroutine
-    # await srl.gatekeeper(
-    #     ircbot=ircbot,
-    #     channel=channel,
-    #     spoilerlogurl=spoiler_log_url,
-    #     players=players,
-    #     permalink=permalink,
-    #     loop=loop
-    # )
+    await srl.gatekeeper(
+        ircbot=ircbot,
+        discordctx=ctx,
+        sg_episode_id=arg1,
+        channel=channel,
+        spoilerlogurl=spoiler_log_url,
+        players=players,
+        seed=seed,
+        raceid=raceid,
+        loop=loop
+    )
 
 async def generate_bracket_dm(seed, players, channel):
     msg = 'Details for race {player1} vs {player2}:\n\n' \
@@ -133,13 +137,25 @@ async def generate_bracket_dm(seed, players, channel):
         fscode=' | '.join(await seed.code()))
     return msg
 
+async def generate_bracket_spoiler_dm(participants, players, spoilerurl):
+    msg = 'Spoiler log for {player1} vs {player2}:\n\n' \
+        '{spoilerurl}'.format(
+            player1=players[0],
+            player2=players[1],
+            spoilerurl=spoilerurl,
+        )
+    return msg
+
 async def write_json_to_disk(spoiler, hash):
     filename = 'spoilertourneylog__' + hash + '__' + ''.join(random.choices(string.ascii_letters + string.digits, k=6)) + '.txt'
-    spoilerdatafile = open(config['spoiler_log_local'] + filename, "w")
-    # magic happens here to make it pretty-printed
+
+    # magic happens here to make it pretty-printed and tournament-compliant
     s = json.loads(spoiler)
     del s['meta']['_meta']
     del s['playthrough']
-    spoilerdatafile.write(json.dumps(s, indent=4, sort_keys=True))
-    spoilerdatafile.close()
+
+    async with aiofiles.open(config['spoiler_log_local'] + '/' + filename, "w") as out:
+        await out.write(json.dumps(s, indent=4, sort_keys=True))
+        await out.flush()
+
     return config['spoiler_log_url_base'] + '/' + filename

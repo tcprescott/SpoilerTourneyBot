@@ -17,7 +17,9 @@ class SpeedGamingEpisode():
 
     async def _init(self):
         async with aiohttp.ClientSession() as session:
-            async with session.get(config['sg_api_endpoint'] + '/episode/?id=' + str(self.episodeid)) as response:
+            #using a mock json doc instead of querying SG API
+            async with session.get('https://server1.the-synack.com/sg_test/sgtest.json') as response:
+            # async with session.get(config['sg_api_endpoint'] + '/episode/?id=' + str(self.episodeid)) as response:
                 raw = await response.text()
                 self.episode = json.loads(raw)
 
@@ -40,6 +42,7 @@ class SpeedGamingEpisode():
         if not self.episode['match2'] == None:
             for player in self.episode['match2']['players']:
                 particpants.append(player['discordTag'])
+
         return particpants
 
     async def get_player_names(self):

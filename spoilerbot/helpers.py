@@ -25,29 +25,3 @@ async def error_handle(ctx,error,logger,cmd):
         player = ctx.author,
         error = error,
     ))
-
-async def countdown_timer(duration_in_seconds, srl_channel, loop, ircbot):
-    reminders = [900,600,300,120,60,30,10,9,8,7,6,5,4,3,2,1]
-    start_time = loop.time()
-    end_time = loop.time() + duration_in_seconds
-    while True:
-        # print(datetime.datetime.now())
-        timeleft = math.ceil(start_time - loop.time() + duration_in_seconds)
-        # print(timeleft)
-        if timeleft in reminders:
-            minutes = math.floor(timeleft/60)
-            seconds = math.ceil(timeleft % 60)
-            if minutes == 0:
-                msg = '{seconds} second(s) remain!'.format(
-                    seconds=seconds
-                )
-            else:
-                msg = '{minutes} minute(s), {seconds} remain!'.format(
-                    minutes=minutes,
-                    seconds=seconds
-                )
-            ircbot.send('PRIVMSG', target=srl_channel, message=msg)
-            reminders.remove(timeleft)
-        if (loop.time() + 1) >= end_time:
-            break
-        await asyncio.sleep(.5)

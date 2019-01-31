@@ -18,6 +18,9 @@ import pyz3r_asyncio
 
 import re
 
+
+
+
 config = cfg.get_config()
 
 # discord bot using discord.py rewrite
@@ -51,8 +54,9 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-@discordbot.command()
+@discordbot.command(hidden=True)
 async def test(ctx, arg1=None):
+    """ A testing function, move along """
     seed = await pyz3r_asyncio.create_seed(
         randomizer='item', # optional, defaults to item
         baseurl='https://spoilertourney.the-synack.com',
@@ -78,23 +82,47 @@ async def test(ctx, arg1=None):
     ))
 
 # make sure that admins can only do this in the public version of the bot!
-@discordbot.command()
-async def srl_chat(ctx, arg1, arg2):
-    ircbot.send('JOIN', channel=arg1)
-    ircbot.send('PRIVMSG', target=arg1, message=arg2)
-    ircbot.send('PART', channel=arg1)
+@discordbot.command(hidden=True)
+async def srl_chat(ctx, channel, message):
+    """ Say arbitrary things as the IRC bot, join the channel if needed. """
+    ircbot.send('JOIN', channel=channel)
+    ircbot.send('PRIVMSG', target=channel, message=message)
+
+import ircmessage
+
+@discordbot.command(hidden=True)
+async def srl_notice(ctx, target, channel, message):
+    """ Send an IRC notice as the irc bot """
+    ircbot.send('NOTICE',
+        target=target,
+        channel=channel,
+        message=ircmessage.style(message, fg='red', bold=True))
 
 #restreamrace command
-@discordbot.command()
-async def restreamrace(ctx, arg1=None, arg2=None):
-    await bracket.restreamrace(ctx=ctx, arg1=arg1, arg2=arg2, loop=loop)
+@discordbot.command(
+    help='Begin a race to be restreamed.  Should be ran by a restreamer or broadcast operator.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
+    brief='Begin a restreamed race'
+)
+async def restreamrace(ctx, sg_race_id=None, srl_channel=None):
+    await bracket.restreamrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
+
+#norestreamrace command
+@discordbot.command(
+    help='Begin a race that will NOT be restreamed.  This should be ran by one of the players.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
+    brief='Begin a non-restreamed race'
+)
+async def norestreamrace(ctx, sg_race_id=None, srl_channel=None):
+    await bracket.restreamrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
 
 #qualifier command, this has been condensed and relocated to the spoilerbot/qualifier.py
-@discordbot.command()
-async def qualifier(ctx, arg1=''):
+@discordbot.command(
+    help='Request a verification key to begin a qualifier run.\n\n*seednum* is the number of the seed you wish to play.',
+    brief='Request a qualifier verification key'
+)
+async def qualifier(ctx, seednum=''):
     await qual.qualifier_cmd(
         ctx=ctx,
-        arg1=arg1,
+        arg1=seednum,
         loop=loop,
         logger=logger
     )
@@ -115,20 +143,14 @@ def keepalive(message, **kwargs):
     ircbot.send('PONG', message=message)
 
 
-# for testing, this ircbot will actually only be sending messages
-# @ircbot.on('PRIVMSG')
-# def message(nick, target, message, **kwargs):
-#     """ Echo all messages """
-
-#     # Don't echo ourselves
-#     if nick == NICK:
-#         return
-#     # Respond directly to direct messages
-#     if target == NICK:
-#         print(message)
-#     # Channel message
-#     else:
-#         print(message)
+# log messages
+@ircbot.on('PRIVMSG')
+async def message(nick, target, message, **kwargs):
+    await srl.write_chat_log(
+        channel=target,
+        author=nick,
+        message=message
+    )
 
 @ircbot.on('NOTICE')
 def notice(message, **kwargs):
@@ -139,5 +161,5 @@ def notice(message, **kwargs):
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(discordbot.start(config['discord_token']))
-    # loop.create_task(ircbot.connect())
+    loop.create_task(ircbot.connect())
     loop.run_forever()
