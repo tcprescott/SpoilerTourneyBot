@@ -9,7 +9,10 @@ import datetime
 
 import math
 
+import pyz3r_asyncio
+
 import spoilerbot.sg as sg
+import spoilerbot.database as db
 
 import spoilerbot.config as cfg
 config = cfg.get_config()
@@ -37,9 +40,101 @@ async def connect(ircbot, config, loop):
 
     ircbot.send('JOIN', channel='#speedrunslive')
 
-async def gatekeeper(ircbot, discordctx, sg_episode_id, channel, spoilerlogurl, players, seed, raceid, loop):
-    ircbot.send('JOIN', channel=channel)
-    await asyncio.sleep(1)
+async def spoilerstart(channel, author, ircbot, discordbot, loop):
+    if channel == '#speedrunslive':
+        return
+    # ignore private messages
+    if channel == config['srl_irc_nickname']:
+        return
+
+    if re.search('^#srl-[a-z0-9]{5}$',channel):
+        raceid = channel.partition('-')[-1]
+    else:
+        return
+
+    if not await is_race_open(raceid):
+        ircbot.send('NOTICE', target=channel, author=author, message='This race is not currently open for entry.')
+        return
+
+    if not await get_single_player(raceid, player=config['srl_irc_nickname'].lower()) == None:
+        ircbot.send('PRIVMSG', target=channel, message='Bot is already entered into this race.')
+        return
+
+    sbdb = db.SpoilerBotDatabase(loop)
+    await sbdb.connect()
+    racedata = await sbdb.get_bracket_race(raceid)
+    await sbdb.close()
+    if racedata == None:
+        ircbot.send('PRIVMSG', target=channel, message='This race is not yet registered with SpoilerTourneyBot.  Please run $bracketrace command in discord.')
+        return
+
+    sg_episode_id = racedata[0]
+    srl_race_id = racedata[1]
+    hash = racedata[2]
+    player1 = racedata[3]
+    player2 = racedata[4]
+    spoiler_url = racedata[5]
+    initiated_by = racedata[6]
+
+    seed = await pyz3r_asyncio.create_seed(
+        randomizer='item',
+        baseurl=config['alttpr_website']['baseurl'],
+        seed_baseurl=config['alttpr_website']['baseurl_seed'],
+        append_json_extension=False,
+        hash=hash
+    )
+
+    await gatekeeper(
+        ircbot=ircbot,
+        discordbot=discordbot,
+        initiated_by_discordtag=initiated_by,
+        sg_episode_id=sg_episode_id,
+        channel=channel,
+        spoilerlogurl=spoiler_url,
+        players=[player1, player2],
+        seed=seed,
+        raceid=raceid,
+        loop=loop
+    )
+
+
+async def spoilerseed(channel, author, ircbot, loop):
+    if channel == '#speedrunslive':
+        return
+    # ignore private messages
+    if channel == config['srl_irc_nickname']:
+        return
+
+    if re.search('^#srl-[a-z0-9]{5}$',channel):
+        raceid = channel.partition('-')[-1]
+    else:
+        return
+
+    sbdb = db.SpoilerBotDatabase(loop)
+    await sbdb.connect()
+    racedata = await sbdb.get_bracket_race(raceid)
+    await sbdb.close()
+
+    if racedata == None:
+        ircbot.send('PRIVMSG', target=channel, message='This race is not yet registered with SpoilerTourneyBot.  Please run $bracketrace command in discord.')
+        return
+
+    hash = racedata[2]
+    seed = await pyz3r_asyncio.create_seed(
+        randomizer='item',
+        baseurl=config['alttpr_website']['baseurl'],
+        seed_baseurl=config['alttpr_website']['baseurl_seed'],
+        append_json_extension=False,
+        hash=hash
+    )
+
+    ircbot.send('PRIVMSG', target=channel, message='Seed: {permalink} - {code}'.format(
+        permalink=await seed.url(),
+        code=' | '.join(await seed.code())
+    ))
+
+async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id, channel, spoilerlogurl, players, seed, raceid, loop):
+    # ircbot.send('JOIN', channel=channel)
     ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {player1} vs. {player2} - {permalink} - [{code}]'.format(
         player1=players[0],
         player2=players[1],
@@ -54,44 +149,33 @@ async def gatekeeper(ircbot, discordctx, sg_episode_id, channel, spoilerlogurl, 
     ))
     await asyncio.sleep(1)
     ready_players = await get_race_players(raceid)
+    ircbot.send('PRIVMSG', target=channel, message='Sending spoiler log to readied players.')
     for player in ready_players['Ready']:
         ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
         ircbot.send('NOTICE', channel=channel, target=player, message='This race\'s spoiler log: {spoilerurl}'.format(
             spoilerurl=spoilerlogurl
         ))
+        # ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
+        # ircbot.send('NOTICE', channel=channel, target=player, message='Permalink: {permalink}'.format(
+        #     permalink=await seed.url()
+        # ))
+        # ircbot.send('NOTICE', channel=channel, target=player, message='Code: [{code}]'.format(
+        #     code=' | '.join(await seed.code())
+        # ))
         ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
-        ircbot.send('NOTICE', channel=channel, target=player, message='Permalink: {permalink}'.format(
-            permalink=await seed.url()
-        ))
-        ircbot.send('NOTICE', channel=channel, target=player, message='Code: [{code}]'.format(
-            code=' | '.join(await seed.code())
-        ))
-        ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
-
-    sge = await sg.find_episode(sg_episode_id)
-    participants = await sge.get_participants_discord()
-    participants.append(discordctx.author.name + '#' + discordctx.author.discriminator)
-    #filter out duplicates
-    participants = list(set(participants))
-
-    msg = await generate_bracket_spoiler_dm(participants, players, spoilerlogurl)
-    for user in participants:
-        u = discordctx.guild.get_member_named(user)
-        if u == None:
-            #log this at sometime, for now just skip
-            pass
-        else:
-            dm = u.dm_channel
-            if dm == None:
-                dm = await u.create_dm()
-            await dm.send(msg)
+    await send_discord_dms(
+        sg_episode_id=sg_episode_id,
+        discordbot=discordbot,
+        players=players,
+        spoilerlogurl=spoilerlogurl,
+        initiated_by_discordtag=initiated_by_discordtag,
+    )
 
     await countdown_timer(
         duration_in_seconds=61,
         srl_channel=channel,
         loop=loop,
         ircbot=ircbot,
-        discordctx=discordctx,
     )
     ircbot.send('PRIVMSG', target=channel, message='GLHF! :mudora:')
     ircbot.send('PRIVMSG', target=channel, message='.quit')
@@ -158,6 +242,17 @@ async def get_race_players(raceid):
         players.setdefault(race['entrants'][entrant]['statetext'], []).append(entrant)
     return players
 
+async def get_single_player(raceid, player):
+    #get current race
+    race = await get_race(raceid)
+
+    #build a simpliified dictionary separated by state
+    players = {}
+    for entrant in race['entrants']:
+        if entrant == player:
+            return entrant
+    return None
+
 async def is_race_open(raceid):
     race = await get_race(raceid)
     try:
@@ -169,8 +264,8 @@ async def is_race_open(raceid):
         return False
         
 async def write_chat_log(channel, author, message):
-    # if channel == '#speedrunslive':
-    #     return
+    if channel == '#speedrunslive':
+        return
     # ignore private messages
     if channel == config['srl_irc_nickname']:
         return
@@ -185,7 +280,7 @@ async def write_chat_log(channel, author, message):
         await out.close()
 
 
-async def countdown_timer(duration_in_seconds, srl_channel, loop, ircbot, discordctx):
+async def countdown_timer(duration_in_seconds, srl_channel, loop, ircbot):
     reminders = [900,600,300,120,60,30,10,9,8,7,6,5,4,3,2,1]
     start_time = loop.time()
     end_time = loop.time() + duration_in_seconds
@@ -216,12 +311,29 @@ async def countdown_timer(duration_in_seconds, srl_channel, loop, ircbot, discor
             break
         await asyncio.sleep(.5)
 
+async def send_discord_dms(sg_episode_id, discordbot, players, spoilerlogurl, initiated_by_discordtag):
+    sge = await sg.find_episode(sg_episode_id)
+    participants = await sge.get_participants_discord()
+    participants.append(initiated_by_discordtag)
+    #filter out duplicates
+    participants = list(set(participants))
 
-async def generate_bracket_spoiler_dm(participants, players, spoilerlogurl):
     msg = 'Spoiler log for {player1} vs {player2}:\n\n' \
         '{spoilerurl}'.format(
             player1=players[0],
             player2=players[1],
             spoilerurl=spoilerlogurl,
         )
-    return msg
+
+    guild = discordbot.get_guild(config['dm_discord_guild'])
+
+    for user in participants:
+        u = guild.get_member_named(user)
+        if u == None:
+            #log this at sometime, for now just skip
+            pass
+        else:
+            dm = u.dm_channel
+            if dm == None:
+                dm = await u.create_dm()
+            await dm.send(msg)

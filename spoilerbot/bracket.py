@@ -14,7 +14,63 @@ import aiofiles
 import spoilerbot.config as cfg
 config = cfg.get_config()
 
-async def restreamrace(ctx, loop, ircbot, arg1=None, arg2=None):
+async def resend(ctx, loop, ircbot, channel):
+    if channel==None:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, you need to specify a channel.'.format(
+            author=ctx.author.mention
+        ))
+        return
+    if re.search('^#srl-[a-z0-9]{5}$',channel):
+        raceid = channel.partition('-')[-1]
+    else:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, that doesn\'t look like an SRL race room.'.format(
+            author=ctx.author.mention
+        ))
+        return
+
+    # figure out if this game has already been generated
+    sbdb = db.SpoilerBotDatabase(loop)
+    await sbdb.connect()
+    racedata = await sbdb.get_bracket_race(raceid)
+    await sbdb.close()
+    
+    if racedata == None:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, `$bracketrace` has not yet been ran for this race.'.format(
+            author=ctx.author.mention
+        ))
+        return
+
+    ircbot.send('JOIN', channel=channel)
+
+    hash = racedata[2]
+    player1 = racedata[3]
+    player2 = racedata[4]
+
+    seed = await pyz3r_asyncio.create_seed(
+        randomizer='item',
+        baseurl=config['alttpr_website']['baseurl'],
+        seed_baseurl=config['alttpr_website']['baseurl_seed'],
+        append_json_extension=False,
+        hash=hash
+    )
+
+    msg = await generate_bracket_dm(
+        seed=seed,
+        players=[player1, player2],
+        channel=channel,
+        )
+
+    dm = ctx.author.dm_channel
+    if dm == None:
+        dm = await ctx.author.create_dm()
+    await dm.send(msg)
+
+    await ctx.message.add_reaction('👍')
+
+async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None):
     if arg1==None or arg2==None:
         await ctx.message.add_reaction('👎')
         await ctx.send('{author}, you need both the race id and srl room specified.'.format(
@@ -33,6 +89,19 @@ async def restreamrace(ctx, loop, ircbot, arg1=None, arg2=None):
     if not await srl.is_race_open(raceid):
         await ctx.message.add_reaction('👎')
         await ctx.send('{author}, that race does not exist or is not in an "Entry Open" state.'.format(
+            author=ctx.author.mention
+        ))
+        return
+
+    # figure out if this game has already been generated
+    sbdb = db.SpoilerBotDatabase(loop)
+    await sbdb.connect()
+    racedata = await sbdb.get_bracket_race(raceid)
+    await sbdb.close()
+    
+    if not racedata == None:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, game data was already generated for that SRL room, try using `$resend #srl-12345` where `#srl-12345` is the SRL channel name to resend seed information and have the bot join the room.'.format(
             author=ctx.author.mention
         ))
         return
@@ -76,7 +145,19 @@ async def restreamrace(ctx, loop, ircbot, arg1=None, arg2=None):
     await rdb.close()
 
     spoiler_log_url = await write_json_to_disk(spoiler_log[0], seed.hash)
-    print(spoiler_log_url)
+
+    modlogchannel = ctx.guild.get_channel(config['log_channel'][ctx.guild.id])
+    msg = 'Race {player1} vs {player2}:\n\n' \
+    'SRL Channel: {srlchannel}\n' \
+    'Permalink: {permalink}\n' \
+    'Spoiler log: {spoilerlog}'.format(
+        player1=players[0],
+        player2=players[1],
+        srlchannel=channel,
+        permalink=await seed.url(),
+        spoilerlog=spoiler_log_url
+    )
+    await modlogchannel.send(msg)
 
     spdb = db.SpoilerBotDatabase(loop)
     await spdb.connect()
@@ -108,27 +189,18 @@ async def restreamrace(ctx, loop, ircbot, arg1=None, arg2=None):
                 dm = await u.create_dm()
             await dm.send(msg)
     
+    ircbot.send('JOIN', channel=channel)
+
     await ctx.message.add_reaction('👍')
-    # call SRL gatekeeper coroutine
-    await srl.gatekeeper(
-        ircbot=ircbot,
-        discordctx=ctx,
-        sg_episode_id=arg1,
-        channel=channel,
-        spoilerlogurl=spoiler_log_url,
-        players=players,
-        seed=seed,
-        raceid=raceid,
-        loop=loop
-    )
 
 async def generate_bracket_dm(seed, players, channel):
     msg = 'Details for race {player1} vs {player2}:\n\n' \
     'SRL Channel: {srlchannel}\n' \
     'Permalink: {permalink}\n' \
     'Code: [{fscode}]\n\n' \
-    'The bot will provide the spoiler log in SRL chat once all joined players have readied up.\n' \
-    'At that point a link to the spoiler log and a 15 minute countdown timer will commence.\n\n' \
+    'In the SRL room, issue the command `$spoilerstart` to have the bot begin gatekeeping.\n' \
+    'The bot will wait for all joined players to be readied up, and any human gatekeepers to leave (such as the restreamer).\n' \
+    'At that point a link to the spoiler log and a 15 minute countdown timer will commence.  If you do not get the spoiler log in SRL, DM an admin immediately!\n\n' \
     'Good luck <:mudora:536293302689857567>'.format(
         player1=players[0],
         player2=players[1],

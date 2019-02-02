@@ -58,7 +58,9 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
         hash=qualifier_seed[0]
     )
 
-    verificationkey = ''.join(random.choices(string.ascii_uppercase, k=4))
+    verificationkey = await generate_verification_key(loop)
+
+
     permalink = await seed.url()
     fscode = ' | '.join(await seed.code())
     timestamp = str(datetime.now(tz))
@@ -134,3 +136,18 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
     ))
 
     await ctx.message.add_reaction('👍')
+
+async def generate_verification_key(loop):
+    for a in range(10):
+        key = ''.join(random.choices(string.ascii_uppercase, k=4))
+        sbdb = db.SpoilerBotDatabase(loop)
+        await sbdb.connect()
+        flattened=[]
+        for keyrow in await sbdb.get_verification_keys():
+            flattened.append(keyrow[0])
+        if not key in flattened:
+            await sbdb.record_verification_key(key)
+            await sbdb.close()
+            return key
+    sbdb.close()
+    raise RuntimeError('Verification key generation failed.')

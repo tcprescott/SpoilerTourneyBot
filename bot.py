@@ -54,65 +54,71 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-@discordbot.command(hidden=True)
-async def test(ctx, arg1=None):
-    """ A testing function, move along """
-    seed = await pyz3r_asyncio.create_seed(
-        randomizer='item', # optional, defaults to item
-        baseurl='https://spoilertourney.the-synack.com',
-        seed_baseurl='https://spoilertourney.the-synack.com/hash',
-        append_json_extension=False,
-        settings={
-            "difficulty": "normal",
-            "enemizer": False,
-            "logic": "NoGlitches",
-            "mode": "open",
-            "spoilers": False,
-            "tournament": True,
-            "variation": "none",
-            "weapons": "randomized",
-            "lang": "en"
-        }
-    )
-    print("Permalink: {url}".format(
-        url = await seed.url()
-    ))
-    print("Hash: [{hash}]".format(
-        hash = ' | '.join(await seed.code())
-    ))
+# @discordbot.command(hidden=True)
+# async def test(ctx, arg1=None):
+#     """ A testing function, move along """
+#     seed = await pyz3r_asyncio.create_seed(
+#         randomizer='item', # optional, defaults to item
+#         baseurl='https://spoilertourney.the-synack.com',
+#         seed_baseurl='https://spoilertourney.the-synack.com/hash',
+#         append_json_extension=False,
+#         settings={
+#             "difficulty": "normal",
+#             "enemizer": False,
+#             "logic": "NoGlitches",
+#             "mode": "open",
+#             "spoilers": False,
+#             "tournament": True,
+#             "variation": "none",
+#             "weapons": "randomized",
+#             "lang": "en"
+#         }
+#     )
+#     print("Permalink: {url}".format(
+#         url = await seed.url()
+#     ))
+#     print("Hash: [{hash}]".format(
+#         hash = ' | '.join(await seed.code())
+#     ))
 
 # make sure that admins can only do this in the public version of the bot!
 @discordbot.command(hidden=True)
-async def srl_chat(ctx, channel, message):
-    """ Say arbitrary things as the IRC bot, join the channel if needed. """
+async def botreset(ctx, channel):
     ircbot.send('JOIN', channel=channel)
-    ircbot.send('PRIVMSG', target=channel, message=message)
+    ircbot.send('PRIVMSG', target=channel, message='.quit')
 
-import ircmessage
+# import ircmessage
 
-@discordbot.command(hidden=True)
-async def srl_notice(ctx, target, channel, message):
-    """ Send an IRC notice as the irc bot """
-    ircbot.send('NOTICE',
-        target=target,
-        channel=channel,
-        message=ircmessage.style(message, fg='red', bold=True))
+# @discordbot.command(hidden=True)
+# async def srl_notice(ctx, target, channel, message):
+#     """ Send an IRC notice as the irc bot """
+#     ircbot.send('NOTICE',
+#         target=target,
+#         channel=channel,
+#         message=ircmessage.style(message, fg='red', bold=True))
 
 #restreamrace command
 @discordbot.command(
     help='Begin a race to be restreamed.  Should be ran by a restreamer or broadcast operator.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
     brief='Begin a restreamed race'
 )
-async def restreamrace(ctx, sg_race_id=None, srl_channel=None):
-    await bracket.restreamrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
+async def bracketrace(ctx, sg_race_id=None, srl_channel=None):
+    await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
 
-#norestreamrace command
 @discordbot.command(
-    help='Begin a race that will NOT be restreamed.  This should be ran by one of the players.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
-    brief='Begin a non-restreamed race'
+    help='Sends you a DM with bracket information',
+    brief='Begin a restreamed race'
 )
-async def norestreamrace(ctx, sg_race_id=None, srl_channel=None):
-    await bracket.restreamrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
+async def resend(ctx, channel=None):
+    await bracket.resend(ctx, loop, ircbot, channel)
+
+# #norestreamrace command
+# @discordbot.command(
+#     help='Begin a race that will NOT be restreamed.  This should be ran by one of the players.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
+#     brief='Begin a non-restreamed race'
+# )
+# async def norestreamrace(ctx, sg_race_id=None, srl_channel=None):
+#     await bracket.restreamrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
 
 #qualifier command, this has been condensed and relocated to the spoilerbot/qualifier.py
 @discordbot.command(
@@ -143,7 +149,7 @@ def keepalive(message, **kwargs):
     ircbot.send('PONG', message=message)
 
 
-# log messages
+# log messages, respond to $spoilerstart and $spoilerseed commands
 @ircbot.on('PRIVMSG')
 async def message(nick, target, message, **kwargs):
     await srl.write_chat_log(
@@ -151,6 +157,21 @@ async def message(nick, target, message, **kwargs):
         author=nick,
         message=message
     )
+    if message == '$spoilerstart':
+        await srl.spoilerstart(
+            channel=target,
+            author=nick,
+            ircbot=ircbot,
+            discordbot=discordbot,
+            loop=loop
+        )
+    elif message == '$spoilerseed':
+        await srl.spoilerseed(
+            channel=target,
+            author=nick,
+            ircbot=ircbot,
+            loop=loop
+        )
 
 @ircbot.on('NOTICE')
 def notice(message, **kwargs):
