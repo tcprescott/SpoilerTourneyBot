@@ -100,6 +100,18 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
         )
     )
 
+    modlogchannel = ctx.guild.get_channel(config['log_channel'][ctx.guild.id])
+    msg = 'Qualifier request for {player}:\n\n' \
+    'Verification Key: {verificationkey}\n' \
+    'Seed Number: {seednum}\n' \
+    'Timestamp: {timestamp}'.format(
+        player = ctx.author.name + '#' + ctx.author.discriminator,
+        verificationkey=verificationkey,
+        seednum=seednum,
+        timestamp=timestamp,
+    )
+    await modlogchannel.send(msg)
+
     logger.info('Qualifier DM Sent - {servername} - {channelname} - {player} - {seednum} - {verificationkey}'.format(
         servername = ctx.guild.name,
         channelname = ctx.channel.name,
