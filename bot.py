@@ -76,7 +76,7 @@ async def nosrlrace(ctx, sg_race_id=None):
     await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, loop=loop, ircbot=ircbot, nosrl=True)
 
 @discordbot.command(
-    help='Begin a practice skirmish.\n\title should title of the match in quotes\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
+    help='Begin a practice skirmish.\n\ntitle should title of the match in quotes\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
     brief='Begin a practice skirmish',
 )
 async def skirmish(ctx, title=None, srl_channel=None):
