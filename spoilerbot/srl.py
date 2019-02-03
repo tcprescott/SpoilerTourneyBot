@@ -302,7 +302,7 @@ async def countdown_timer(duration_in_seconds, srl_channel, loop, ircbot):
         await asyncio.sleep(.5)
 
 async def send_discord_dms(sg_episode_id, discordbot, title, spoilerlogurl, initiated_by_discordtag):
-    if sg_episode_id=='0' or sg_episode_id==0:
+    if sg_episode_id=='0':
         return
     sge = await sg.find_episode(sg_episode_id)
     participants = await sge.get_participants_discord()

@@ -123,7 +123,8 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False, skir
         channel = ''
 
     if skirmish==False:
-        sge = await sg.find_episode(arg1)
+        sg_episode_id = arg1
+        sge = await sg.find_episode(sg_episode_id)
         participants = await sge.get_participants_discord()
         players = await sge.get_player_names()
         participants.append(ctx.author.name + '#' + ctx.author.discriminator)
@@ -184,7 +185,7 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False, skir
     spdb = db.SpoilerBotDatabase(loop)
     await spdb.connect()
     await spdb.record_bracket_race(
-        sg_episode_id=arg1,
+        sg_episode_id=sg_episode_id,
         srl_race_id=raceid,
         hash=seed.hash,
         title=title,
