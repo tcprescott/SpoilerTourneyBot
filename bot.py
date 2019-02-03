@@ -83,6 +83,13 @@ async def skirmish(ctx, title=None, srl_channel=None):
     await bracket.bracketrace(ctx=ctx, arg1=title, arg2=srl_channel, loop=loop, ircbot=ircbot, skirmish=True)
 
 @discordbot.command(
+    help='Generates a seed and sends the requestor a DM w/ the spoiler log, permalink, and code.  Intended for practice.',
+    brief='Generate a practice seed.'
+)
+async def practice(ctx):
+    await bracket.practice(ctx=ctx, loop=loop)
+
+@discordbot.command(
     help='Sends you a DM with bracket information',
     brief='Begin a restreamed race'
 )

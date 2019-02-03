@@ -14,6 +14,52 @@ import aiofiles
 import spoilerbot.config as cfg
 config = cfg.get_config()
 
+async def practice(ctx, loop):
+    seed = await pyz3r_asyncio.create_seed(
+        randomizer='item', # optional, defaults to item
+        baseurl=config['alttpr_website']['baseurl'],
+        seed_baseurl=config['alttpr_website']['baseurl_seed'],
+        append_json_extension=False,
+        settings={
+            "difficulty": "normal",
+            "enemizer": False,
+            "logic": "NoGlitches",
+            "mode": "open",
+            "tournament": True,
+            "variation": "none",
+            "weapons": "randomized",
+            "lang": "en"
+        }
+    )
+
+    rdb = db.RandomizerDatabase(loop)
+    await rdb.connect()
+    spoiler_log = await rdb.get_seed_spoiler(seed.hash)
+    await rdb.close()
+
+    spoiler_log_url = await write_json_to_disk(spoiler_log[0], seed.hash)
+
+    permalink = await seed.url()
+    fscode = ' | '.join(await seed.code())
+
+    dm = ctx.author.dm_channel
+    if dm == None:
+        dm = await ctx.author.create_dm()
+
+    await dm.send(
+        'Requested practice seed:\n\n'
+        'Permalink: {permalink}\n' \
+        'File select code: [{fscode}]\n' \
+        'Spoiler log: {spoiler}\n\n' \
+        'Good luck <:mudora:536293302689857567>'.format(
+            fscode=fscode,
+            permalink=permalink,
+            spoiler=spoiler_log_url,
+        )
+    )
+
+    await ctx.message.add_reaction('👍')
+
 async def resend(ctx, loop, ircbot, channel):
     if channel==None:
         await ctx.message.add_reaction('👎')
@@ -275,8 +321,51 @@ async def write_json_to_disk(spoiler, hash):
     del s['Shops'] #QOL this information is useless for this tournament
     del s['Bosses'] #QOL this information is useful only for enemizer
 
+    sorteddict = {}
+
+    prizemap = [
+        ['Eastern Palace', 'Eastern Palace - Prize'],
+        ['Desert Palace', 'Desert Palace - Prize'],
+        ['Tower Of Hera', 'Tower of Hera - Prize'],
+        ['Dark Palace', 'Palace of Darkness - Prize'],
+        ['Swamp Palace', 'Swamp Palace - Prize'],
+        ['Skull Woods', 'Skull Woods - Prize'],
+        ['Thieves Town', 'Thieves\' Town - Prize'],
+        ['Ice Palace', 'Ice Palace - Prize'],
+        ['Misery Mire', 'Misery Mire - Prize'],
+        ['Turtle Rock', 'Turtle Rock - Prize'],
+    ]
+    sorteddict['Prizes'] = {}
+    for dungeon, prize in prizemap:
+        sorteddict['Prizes'][dungeon] = s[dungeon][prize]
+
+    sorteddict['meta']           = s['meta']
+    sorteddict['Hyrule Castle']  = sort_dict(s['Hyrule Castle'])
+    sorteddict['Eastern Palace'] = sort_dict(s['Eastern Palace'])
+    sorteddict['Desert Palace']  = sort_dict(s['Desert Palace'])
+    sorteddict['Tower Of Hera']  = sort_dict(s['Tower Of Hera'])
+    sorteddict['Castle Tower']   = sort_dict(s['Castle Tower'])
+    sorteddict['Dark Palace']    = sort_dict(s['Dark Palace'])
+    sorteddict['Swamp Palace']   = sort_dict(s['Swamp Palace'])
+    sorteddict['Skull Woods']    = sort_dict(s['Skull Woods'])
+    sorteddict['Thieves Town']   = sort_dict(s['Thieves Town'])
+    sorteddict['Ice Palace']     = sort_dict(s['Ice Palace'])
+    sorteddict['Misery Mire']    = sort_dict(s['Misery Mire'])
+    sorteddict['Turtle Rock']    = sort_dict(s['Turtle Rock'])
+    sorteddict['Ganons Tower']   = sort_dict(s['Ganons Tower'])
+    sorteddict['Light World']    = sort_dict(s['Light World'])
+    sorteddict['Death Mountain'] = sort_dict(s['Death Mountain'])
+    sorteddict['Dark World']     = sort_dict(s['Dark World'])
+    sorteddict['Special']        = s['Special']
+
     async with aiofiles.open(config['spoiler_log_local'] + '/' + filename, "w", newline='\r\n') as out:
-        await out.write(json.dumps(s, indent=4, sort_keys=True))
+        await out.write(json.dumps(sorteddict, indent=4))
         await out.flush()
 
     return config['spoiler_log_url_base'] + '/' + filename
+
+def sort_dict(dict):
+    sorteddict = {}
+    for key in sorted(dict):
+        sorteddict[key] = dict[key]
+    return sorteddict
