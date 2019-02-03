@@ -358,6 +358,9 @@ async def write_json_to_disk(spoiler, hash):
     sorteddict['Dark World']     = sort_dict(s['Dark World'])
     sorteddict['Special']        = s['Special']
 
+    for dungeon, prize in prizemap:
+        del sorteddict[dungeon][prize]
+
     async with aiofiles.open(config['spoiler_log_local'] + '/' + filename, "w", newline='\r\n') as out:
         await out.write(json.dumps(sorteddict, indent=4))
         await out.flush()
