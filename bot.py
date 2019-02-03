@@ -106,6 +106,14 @@ async def bracketrace(ctx, sg_race_id=None, srl_channel=None):
     await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
 
 @discordbot.command(
+    help='Begin a race to be restreamed.  Should be ran by a restreamer or broadcast operator.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
+    brief='Begin a restreamed race',
+    hidden=True
+)
+async def nosrlrace(ctx, sg_race_id=None):
+    await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, loop=loop, ircbot=ircbot, nosrl=True)
+
+@discordbot.command(
     help='Sends you a DM with bracket information',
     brief='Begin a restreamed race'
 )

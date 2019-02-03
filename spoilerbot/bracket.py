@@ -70,41 +70,51 @@ async def resend(ctx, loop, ircbot, channel):
 
     await ctx.message.add_reaction('👍')
 
-async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None):
-    if arg1==None or arg2==None:
-        await ctx.message.add_reaction('👎')
-        await ctx.send('{author}, you need both the race id and srl room specified.'.format(
-            author=ctx.author.mention
-        ))
-        return
-    if re.search('^#srl-[a-z0-9]{5}$',arg2):
-        raceid = arg2.partition('-')[-1]
-        channel = arg2
-    else:
-        await ctx.message.add_reaction('👎')
-        await ctx.send('{author}, that doesn\'t look like an SRL race room.'.format(
-            author=ctx.author.mention
-        ))
-        return
-    if not await srl.is_race_open(raceid):
-        await ctx.message.add_reaction('👎')
-        await ctx.send('{author}, that race does not exist or is not in an "Entry Open" state.'.format(
-            author=ctx.author.mention
-        ))
-        return
+async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False):
+    if nosrl==False:
+        if arg1==None or arg2==None:
+            await ctx.message.add_reaction('👎')
+            await ctx.send('{author}, you need both the race id and srl room specified.'.format(
+                author=ctx.author.mention
+            ))
+            return
+        if re.search('^#srl-[a-z0-9]{5}$',arg2):
+            raceid = arg2.partition('-')[-1]
+            channel = arg2
+        else:
+            await ctx.message.add_reaction('👎')
+            await ctx.send('{author}, that doesn\'t look like an SRL race room.'.format(
+                author=ctx.author.mention
+            ))
+            return
+        if not await srl.is_race_open(raceid):
+            await ctx.message.add_reaction('👎')
+            await ctx.send('{author}, that race does not exist or is not in an "Entry Open" state.'.format(
+                author=ctx.author.mention
+            ))
+            return
 
-    # figure out if this game has already been generated
-    sbdb = db.SpoilerBotDatabase(loop)
-    await sbdb.connect()
-    racedata = await sbdb.get_bracket_race(raceid)
-    await sbdb.close()
-    
-    if not racedata == None:
-        await ctx.message.add_reaction('👎')
-        await ctx.send('{author}, game data was already generated for that SRL room, try using `$resend #srl-12345` where `#srl-12345` is the SRL channel name to resend seed information and have the bot join the room.'.format(
-            author=ctx.author.mention
-        ))
-        return
+        # figure out if this game has already been generated
+        sbdb = db.SpoilerBotDatabase(loop)
+        await sbdb.connect()
+        racedata = await sbdb.get_bracket_race(raceid)
+        await sbdb.close()
+        
+        if not racedata == None:
+            await ctx.message.add_reaction('👎')
+            await ctx.send('{author}, game data was already generated for that SRL room, try using `$resend #srl-12345` where `#srl-12345` is the SRL channel name to resend seed information and have the bot join the room.'.format(
+                author=ctx.author.mention
+            ))
+            return
+    else:
+        if arg1==None:
+            await ctx.message.add_reaction('👎')
+            await ctx.send('{author}, you the race id.'.format(
+                author=ctx.author.mention
+            ))
+            return
+        raceid = 'nosrl' + ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+        channel = ''
 
     sge = await sg.find_episode(arg1)
     participants = await sge.get_participants_discord()
@@ -189,7 +199,8 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None):
                 dm = await u.create_dm()
             await dm.send(msg)
     
-    ircbot.send('JOIN', channel=channel)
+    if nosrl==False:
+        ircbot.send('JOIN', channel=channel)
 
     await ctx.message.add_reaction('👍')
 
@@ -225,9 +236,10 @@ async def write_json_to_disk(spoiler, hash):
     s = json.loads(spoiler)
     del s['meta']['_meta']
     del s['playthrough']
+    del s['Shops']
 
     async with aiofiles.open(config['spoiler_log_local'] + '/' + filename, "w") as out:
-        await out.write(json.dumps(s, indent=4, sort_keys=True))
+        await out.write(json.dumps(s, indent=4))
         await out.flush()
 
     return config['spoiler_log_url_base'] + '/' + filename

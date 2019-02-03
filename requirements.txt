@@ -9,3 +9,4 @@ aiohttp==2.2.5
 bottom==2.1.3
 ircmessage
 aiofiles
+aiomysql
