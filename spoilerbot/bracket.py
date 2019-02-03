@@ -239,7 +239,7 @@ async def write_json_to_disk(spoiler, hash):
     del s['Shops']
 
     async with aiofiles.open(config['spoiler_log_local'] + '/' + filename, "w") as out:
-        await out.write(json.dumps(s, indent=4))
+        await out.write(json.dumps(s, indent=4, sort_keys=True))
         await out.flush()
 
     return config['spoiler_log_url_base'] + '/' + filename
