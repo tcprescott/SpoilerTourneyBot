@@ -80,7 +80,7 @@ async def nosrlrace(ctx, sg_race_id=None):
     brief='Begin a practice skirmish',
 )
 async def skirmish(ctx, title=None, srl_channel=None):
-    await bracket.skirmish(ctx=ctx, arg1=title, arg2=srl_channel, loop=loop, ircbot=ircbot)
+    await bracket.bracketrace(ctx=ctx, arg1=title, arg2=srl_channel, loop=loop, ircbot=ircbot, skirmish=True)
 
 @discordbot.command(
     help='Sends you a DM with bracket information',
@@ -130,7 +130,7 @@ def keepalive(message, **kwargs):
     ircbot.send('PONG', message=message)
 
 
-# log messages, respond to $spoilerstart and $spoilerseed commands
+# log messages, respond to .spoilerstart and .spoilerseed commands
 @ircbot.on('PRIVMSG')
 async def message(nick, target, message, **kwargs):
     await srl.write_chat_log(
@@ -138,7 +138,7 @@ async def message(nick, target, message, **kwargs):
         author=nick,
         message=message
     )
-    if message == '$spoilerstart':
+    if message == '.spoilerstart':
         await srl.spoilerstart(
             channel=target,
             author=nick,
@@ -146,7 +146,7 @@ async def message(nick, target, message, **kwargs):
             discordbot=discordbot,
             loop=loop
         )
-    elif message == '$spoilerseed':
+    elif message == '.spoilerseed':
         await srl.spoilerseed(
             channel=target,
             author=nick,
