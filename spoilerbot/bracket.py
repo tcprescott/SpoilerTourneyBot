@@ -122,6 +122,8 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False):
     # participants = []
     participants.append(ctx.author.name + '#' + ctx.author.discriminator)
 
+    title = ' v. '.join(players)
+
     #filter out duplicates
     participants = list(set(participants))
 
@@ -142,7 +144,7 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False):
             "enemizer": False,
             "logic": "NoGlitches",
             "mode": "open",
-            "tournament": False,
+            "tournament": True,
             "variation": "none",
             "weapons": "randomized",
             "lang": "en"
@@ -157,12 +159,11 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False):
     spoiler_log_url = await write_json_to_disk(spoiler_log[0], seed.hash)
 
     modlogchannel = ctx.guild.get_channel(config['log_channel'][ctx.guild.id])
-    msg = 'Race {player1} vs {player2}:\n\n' \
+    msg = 'Race {title}:\n\n' \
     'SRL Channel: {srlchannel}\n' \
     'Permalink: {permalink}\n' \
     'Spoiler log: {spoilerlog}'.format(
-        player1=players[0],
-        player2=players[1],
+        title=title,
         srlchannel=channel,
         permalink=await seed.url(),
         spoilerlog=spoiler_log_url
@@ -175,8 +176,7 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False):
         sg_episode_id=arg1,
         srl_race_id=raceid,
         hash=seed.hash,
-        player1=players[0],
-        player2=players[1],
+        title=title,
         permalink=await seed.url(),
         spoiler_url=spoiler_log_url,
         initiated_by=ctx.author.name + '#' + ctx.author.discriminator,
@@ -204,6 +204,104 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False):
 
     await ctx.message.add_reaction('👍')
 
+
+async def skirmish(ctx, loop, ircbot, arg1=None, arg2=None):
+    if arg1==None or arg2==None:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, you need both the title (in quotes) and srl room specified.'.format(
+            author=ctx.author.mention
+        ))
+        return
+    if re.search('^#srl-[a-z0-9]{5}$',arg2):
+        raceid = arg2.partition('-')[-1]
+        channel = arg2
+    else:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, that doesn\'t look like an SRL race room.'.format(
+            author=ctx.author.mention
+        ))
+        return
+    if not await srl.is_race_open(raceid):
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, that race does not exist or is not in an "Entry Open" state.'.format(
+            author=ctx.author.mention
+        ))
+        return
+
+    # figure out if this game has already been generated
+    sbdb = db.SpoilerBotDatabase(loop)
+    await sbdb.connect()
+    racedata = await sbdb.get_bracket_race(raceid)
+    await sbdb.close()
+    
+    if not racedata == None:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, game data was already generated for that SRL room, try using `$resend #srl-12345` where `#srl-12345` is the SRL channel name to resend seed information and have the bot join the room.'.format(
+            author=ctx.author.mention
+        ))
+        return
+    
+    seed = await pyz3r_asyncio.create_seed(
+        randomizer='item', # optional, defaults to item
+        baseurl=config['alttpr_website']['baseurl'],
+        seed_baseurl=config['alttpr_website']['baseurl_seed'],
+        append_json_extension=False,
+        settings={
+            "difficulty": "normal",
+            "enemizer": False,
+            "logic": "NoGlitches",
+            "mode": "open",
+            "tournament": True,
+            "variation": "none",
+            "weapons": "randomized",
+            "lang": "en"
+        }
+    )
+
+    rdb = db.RandomizerDatabase(loop)
+    await rdb.connect()
+    spoiler_log = await rdb.get_seed_spoiler(seed.hash)
+    await rdb.close()
+
+    spoiler_log_url = await write_json_to_disk(spoiler_log[0], seed.hash)
+
+    modlogchannel = ctx.guild.get_channel(config['log_channel'][ctx.guild.id])
+    msg = 'Race {title}:\n\n' \
+    'SRL Channel: {srlchannel}\n' \
+    'Permalink: {permalink}\n' \
+    'Spoiler log: {spoilerlog}'.format(
+        title=arg1,
+        srlchannel=channel,
+        permalink=await seed.url(),
+        spoilerlog=spoiler_log_url
+    )
+    await modlogchannel.send(msg)
+
+    spdb = db.SpoilerBotDatabase(loop)
+    await spdb.connect()
+    await spdb.record_bracket_race(
+        sg_episode_id=0,
+        srl_race_id=raceid,
+        hash=seed.hash,
+        title=arg1,
+        permalink=await seed.url(),
+        spoiler_url=spoiler_log_url,
+        initiated_by=ctx.author.name + '#' + ctx.author.discriminator,
+    )
+    await spdb.close()
+
+    msg = await generate_skirmish_msg(
+        seed=seed,
+        title=arg1,
+        channel=channel,
+        )
+    await ctx.send(msg)
+    
+    ircbot.send('JOIN', channel=channel)
+
+    await ctx.message.add_reaction('👍')
+
+
 async def generate_bracket_dm(seed, players, channel):
     msg = 'Details for race {player1} vs {player2}:\n\n' \
     'SRL Channel: {srlchannel}\n' \
@@ -219,6 +317,22 @@ async def generate_bracket_dm(seed, players, channel):
         permalink=await seed.url(),
         fscode=' | '.join(await seed.code()))
     return msg
+
+async def generate_skirmish_msg(seed, title, channel):
+    msg = 'Skirmish title: {title}\n\n' \
+    'SRL Channel: {srlchannel}\n' \
+    'Permalink: {permalink}\n' \
+    'Code: [{fscode}]\n\n' \
+    'In the SRL room, issue the command `$spoilerstart` to have the bot begin gatekeeping.\n' \
+    'The bot will wait for all joined players to be readied up, and any human gatekeepers to leave.\n' \
+    'At that point a link to the spoiler log and a 15 minute countdown timer will commence.  If you do not get the spoiler log in SRL, DM an admin immediately!\n\n' \
+    'Good luck <:mudora:536293302689857567>'.format(
+        title=title,
+        srlchannel=channel,
+        permalink=await seed.url(),
+        fscode=' | '.join(await seed.code()))
+    return msg
+
 
 async def generate_bracket_spoiler_dm(participants, players, spoilerurl):
     msg = 'Spoiler log for {player1} vs {player2}:\n\n' \

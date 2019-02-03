@@ -71,10 +71,9 @@ async def spoilerstart(channel, author, ircbot, discordbot, loop):
     sg_episode_id = racedata[0]
     srl_race_id = racedata[1]
     hash = racedata[2]
-    player1 = racedata[3]
-    player2 = racedata[4]
-    spoiler_url = racedata[5]
-    initiated_by = racedata[6]
+    title = racedata[3]
+    spoiler_url = racedata[4]
+    initiated_by = racedata[5]
 
     seed = await pyz3r_asyncio.create_seed(
         randomizer='item',
@@ -91,7 +90,7 @@ async def spoilerstart(channel, author, ircbot, discordbot, loop):
         sg_episode_id=sg_episode_id,
         channel=channel,
         spoilerlogurl=spoiler_url,
-        players=[player1, player2],
+        title=title,
         seed=seed,
         raceid=raceid,
         loop=loop
@@ -120,6 +119,7 @@ async def spoilerseed(channel, author, ircbot, loop):
         return
 
     hash = racedata[2]
+
     seed = await pyz3r_asyncio.create_seed(
         randomizer='item',
         baseurl=config['alttpr_website']['baseurl'],
@@ -133,19 +133,17 @@ async def spoilerseed(channel, author, ircbot, loop):
         code=' | '.join(await seed.code())
     ))
 
-async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id, channel, spoilerlogurl, players, seed, raceid, loop):
+async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id, channel, spoilerlogurl, title, seed, raceid, loop):
     # ircbot.send('JOIN', channel=channel)
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {player1} vs. {player2} - {permalink} - [{code}]'.format(
-        player1=players[0],
-        player2=players[1],
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {title} - {permalink} - [{code}]'.format(
+        title=title,
         permalink=await seed.url(),
         code=' | '.join(await seed.code())
     ))
     ircbot.send('PRIVMSG', target=channel, message='.join')
     await wait_for_ready_up(raceid)
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {player1} vs. {player2} - Log Study In Progress'.format(
-        player1=players[0],
-        player2=players[1],
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {title} - Log Study In Progress'.format(
+        title=title,
     ))
     await asyncio.sleep(1)
     ready_players = await get_race_players(raceid)
@@ -155,18 +153,11 @@ async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id,
         ircbot.send('NOTICE', channel=channel, target=player, message='This race\'s spoiler log: {spoilerurl}'.format(
             spoilerurl=spoilerlogurl
         ))
-        # ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
-        # ircbot.send('NOTICE', channel=channel, target=player, message='Permalink: {permalink}'.format(
-        #     permalink=await seed.url()
-        # ))
-        # ircbot.send('NOTICE', channel=channel, target=player, message='Code: [{code}]'.format(
-        #     code=' | '.join(await seed.code())
-        # ))
         ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
     await send_discord_dms(
         sg_episode_id=sg_episode_id,
         discordbot=discordbot,
-        players=players,
+        title=title,
         spoilerlogurl=spoilerlogurl,
         initiated_by_discordtag=initiated_by_discordtag,
     )
@@ -179,9 +170,8 @@ async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id,
     )
     ircbot.send('PRIVMSG', target=channel, message='GLHF! :mudora:')
     ircbot.send('PRIVMSG', target=channel, message='.quit')
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {player1} vs. {player2}'.format(
-        player1=players[0],
-        player2=players[1],
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {title}'.format(
+        title=title,
     ))
 
 async def get_race(raceid):
@@ -311,17 +301,18 @@ async def countdown_timer(duration_in_seconds, srl_channel, loop, ircbot):
             break
         await asyncio.sleep(.5)
 
-async def send_discord_dms(sg_episode_id, discordbot, players, spoilerlogurl, initiated_by_discordtag):
+async def send_discord_dms(sg_episode_id, discordbot, title, spoilerlogurl, initiated_by_discordtag):
+    if sg_episode_id=='0':
+        return
     sge = await sg.find_episode(sg_episode_id)
     participants = await sge.get_participants_discord()
     participants.append(initiated_by_discordtag)
     #filter out duplicates
     participants = list(set(participants))
 
-    msg = 'Spoiler log for {player1} vs {player2}:\n\n' \
+    msg = 'Spoiler log for {title}:\n\n' \
         '{spoilerurl}'.format(
-            player1=players[0],
-            player2=players[1],
+            title=title,
             spoilerurl=spoilerlogurl,
         )
 

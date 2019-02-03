@@ -56,9 +56,8 @@ async def on_ready():
 
 # make sure that admins can only do this in the public version of the bot!
 @discordbot.command(hidden=True)
-async def botreset(ctx, channel):
-    ircbot.send('JOIN', channel=channel)
-    ircbot.send('PRIVMSG', target=channel, message='.quit')
+async def srlcmd(ctx, op, channel=None, target=None, message=None):
+    ircbot.send(op, channel=channel, target=target, message=message)
 
 #restreamrace command
 @discordbot.command(
@@ -75,6 +74,14 @@ async def bracketrace(ctx, sg_race_id=None, srl_channel=None):
 )
 async def nosrlrace(ctx, sg_race_id=None):
     await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, loop=loop, ircbot=ircbot, nosrl=True)
+
+@discordbot.command(
+    help='Begin a practice skirmish.\n\title should title of the match in quotes\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
+    brief='Begin a restreamed race',
+    hidden=True
+)
+async def skirmish(ctx, title=None, srl_channel=None):
+    await bracket.skirmish(ctx=ctx, arg1=title, arg2=srl_channel, loop=loop, ircbot=ircbot)
 
 @discordbot.command(
     help='Sends you a DM with bracket information',
@@ -95,14 +102,6 @@ async def pizza(ctx):
 async def beer(ctx):
     await ctx.send('🍺')
 
-# #norestreamrace command
-# @discordbot.command(
-#     help='Begin a race that will NOT be restreamed.  This should be ran by one of the players.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
-#     brief='Begin a non-restreamed race'
-# )
-# async def norestreamrace(ctx, sg_race_id=None, srl_channel=None):
-#     await bracket.restreamrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
-
 #qualifier command, this has been condensed and relocated to the spoilerbot/qualifier.py
 @discordbot.command(
     help='Request a verification key to begin a qualifier run.\n\n*seednum* is the number of the seed you wish to play.',
@@ -117,9 +116,9 @@ async def qualifier(ctx, seednum=''):
     )
     
 #handle errors, use our standard error handler to simplify things
-# @qualifier.error
-# async def qualifier_error(ctx, error):
-#     await helpers.error_handle(ctx, error, logger, 'qualifier')
+@qualifier.error
+async def qualifier_error(ctx, error):
+    await helpers.error_handle(ctx, error, logger, 'qualifier')
 
 
 @ircbot.on('CLIENT_CONNECT')
