@@ -163,7 +163,7 @@ async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id,
     )
 
     await countdown_timer(
-        duration_in_seconds=61,
+        duration_in_seconds=900,
         srl_channel=channel,
         loop=loop,
         ircbot=ircbot,
@@ -193,7 +193,7 @@ async def are_ready(raceid):
     except KeyError:
         entered = 0
 
-    if ready >= 1 and entered == 0:
+    if ready >= 2 and entered == 0:
         return True
     else:
         return False
