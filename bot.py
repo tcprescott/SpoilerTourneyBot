@@ -77,8 +77,7 @@ async def nosrlrace(ctx, sg_race_id=None):
 
 @discordbot.command(
     help='Begin a practice skirmish.\n\title should title of the match in quotes\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
-    brief='Begin a restreamed race',
-    hidden=True
+    brief='Begin a practice skirmish',
 )
 async def skirmish(ctx, title=None, srl_channel=None):
     await bracket.skirmish(ctx=ctx, arg1=title, arg2=srl_channel, loop=loop, ircbot=ircbot)
