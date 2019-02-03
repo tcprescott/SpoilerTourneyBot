@@ -236,9 +236,10 @@ async def write_json_to_disk(spoiler, hash):
     s = json.loads(spoiler)
     del s['meta']['_meta']
     del s['playthrough']
-    del s['Shops']
+    del s['Shops'] #QOL this information is useless for this tournament
+    del s['Bosses'] #QOL this information is useful only for enemizer
 
-    async with aiofiles.open(config['spoiler_log_local'] + '/' + filename, "w") as out:
+    async with aiofiles.open(config['spoiler_log_local'] + '/' + filename, "w", newline='\r\n') as out:
         await out.write(json.dumps(s, indent=4, sort_keys=True))
         await out.flush()
 

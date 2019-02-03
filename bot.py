@@ -54,48 +54,11 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-# @discordbot.command(hidden=True)
-# async def test(ctx, arg1=None):
-#     """ A testing function, move along """
-#     seed = await pyz3r_asyncio.create_seed(
-#         randomizer='item', # optional, defaults to item
-#         baseurl='https://spoilertourney.the-synack.com',
-#         seed_baseurl='https://spoilertourney.the-synack.com/hash',
-#         append_json_extension=False,
-#         settings={
-#             "difficulty": "normal",
-#             "enemizer": False,
-#             "logic": "NoGlitches",
-#             "mode": "open",
-#             "spoilers": False,
-#             "tournament": True,
-#             "variation": "none",
-#             "weapons": "randomized",
-#             "lang": "en"
-#         }
-#     )
-#     print("Permalink: {url}".format(
-#         url = await seed.url()
-#     ))
-#     print("Hash: [{hash}]".format(
-#         hash = ' | '.join(await seed.code())
-#     ))
-
 # make sure that admins can only do this in the public version of the bot!
 @discordbot.command(hidden=True)
 async def botreset(ctx, channel):
     ircbot.send('JOIN', channel=channel)
     ircbot.send('PRIVMSG', target=channel, message='.quit')
-
-# import ircmessage
-
-# @discordbot.command(hidden=True)
-# async def srl_notice(ctx, target, channel, message):
-#     """ Send an IRC notice as the irc bot """
-#     ircbot.send('NOTICE',
-#         target=target,
-#         channel=channel,
-#         message=ircmessage.style(message, fg='red', bold=True))
 
 #restreamrace command
 @discordbot.command(
@@ -119,6 +82,18 @@ async def nosrlrace(ctx, sg_race_id=None):
 )
 async def resend(ctx, channel=None):
     await bracket.resend(ctx, loop, ircbot, channel)
+
+@discordbot.command(
+    hidden=True
+)
+async def pizza(ctx):
+    await ctx.send('🍕')
+
+@discordbot.command(
+    hidden=True
+)
+async def beer(ctx):
+    await ctx.send('🍺')
 
 # #norestreamrace command
 # @discordbot.command(
