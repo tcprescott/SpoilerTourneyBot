@@ -91,7 +91,7 @@ async def practice(ctx):
 
 @discordbot.command(
     help='Sends you a DM with bracket information',
-    brief='Begin a restreamed race'
+    brief='Re-request details for a race.'
 )
 async def resend(ctx, channel=None):
     await bracket.resend(ctx, loop, ircbot, channel)
@@ -107,6 +107,12 @@ async def pizza(ctx):
 )
 async def beer(ctx):
     await ctx.send('🍺')
+
+@discordbot.command(
+    hidden=True
+)
+async def mudora(ctx):
+    await ctx.send('<:mudora:536293302689857567>')
 
 #qualifier command, this has been condensed and relocated to the spoilerbot/qualifier.py
 @discordbot.command(
