@@ -134,15 +134,22 @@ async def spoilerseed(channel, author, ircbot, loop):
     ))
 
 async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id, channel, spoilerlogurl, title, seed, raceid, loop):
+    if sg_episode_id=='0':
+        tournament='ALTTPR Spoiler Race'
+    else:
+        tournament='ALTTPR Spoiler Tournament'
+        
     # ircbot.send('JOIN', channel=channel)
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {title} - {permalink} - [{code}]'.format(
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal {tournament} - {title} - {permalink} - [{code}]'.format(
+        tournament=tournament,
         title=title,
         permalink=await seed.url(),
         code=' | '.join(await seed.code())
     ))
     ircbot.send('PRIVMSG', target=channel, message='.join')
     await wait_for_ready_up(raceid)
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {title} - Log Study In Progress'.format(
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal {tournament} - {title} - Log Study In Progress'.format(
+        tournament=tournament,
         title=title,
     ))
     await asyncio.sleep(1)
@@ -170,7 +177,8 @@ async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id,
     )
     ircbot.send('PRIVMSG', target=channel, message='GLHF! :mudora:')
     ircbot.send('PRIVMSG', target=channel, message='.quit')
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal ALTTPR Spoiler Tournament - {title}'.format(
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal {tournament} - {title}'.format(
+        tournament=tournament,
         title=title,
     ))
 
