@@ -57,6 +57,7 @@ async def on_ready():
 # make sure that admins can only do this in the public version of the bot!
 @discordbot.command(hidden=True)
 async def srlcmd(ctx, op, channel=None, target=None, message=None):
+    await ctx.message.add_reaction('⌚')
     ircbot.send(op, channel=channel, target=target, message=message)
 
 #restreamrace command
@@ -65,7 +66,9 @@ async def srlcmd(ctx, op, channel=None, target=None, message=None):
     brief='Begin a restreamed race'
 )
 async def bracketrace(ctx, sg_race_id=None, srl_channel=None):
+    await ctx.message.add_reaction('⌚')
     await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
+    await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 @discordbot.command(
     help='Begin a race to be restreamed.  Should be ran by a restreamer or broadcast operator.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
@@ -73,28 +76,36 @@ async def bracketrace(ctx, sg_race_id=None, srl_channel=None):
     hidden=True
 )
 async def nosrlrace(ctx, sg_race_id=None):
+    await ctx.message.add_reaction('⌚')
     await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, loop=loop, ircbot=ircbot, nosrl=True)
+    await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 @discordbot.command(
     help='Begin a practice skirmish.\n\ntitle should title of the match in quotes\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
     brief='Begin a practice skirmish',
 )
 async def skirmish(ctx, title=None, srl_channel=None):
+    await ctx.message.add_reaction('⌚')
     await bracket.bracketrace(ctx=ctx, arg1=title, arg2=srl_channel, loop=loop, ircbot=ircbot, skirmish=True)
+    await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 @discordbot.command(
     help='Generates a seed and sends the requestor a DM w/ the spoiler log, permalink, and code.  Intended for practice.',
     brief='Generate a practice seed.'
 )
 async def practice(ctx):
+    await ctx.message.add_reaction('⌚')
     await bracket.practice(ctx=ctx, loop=loop)
+    await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 @discordbot.command(
     help='Sends you a DM with bracket information',
     brief='Re-request details for a race.'
 )
 async def resend(ctx, channel=None):
+    await ctx.message.add_reaction('⌚')
     await bracket.resend(ctx, loop, ircbot, channel)
+    await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 @discordbot.command(
     hidden=True
@@ -120,17 +131,20 @@ async def mudora(ctx):
     brief='Request a qualifier verification key'
 )
 async def qualifier(ctx, seednum=''):
+    await ctx.message.add_reaction('⌚')
     await qual.qualifier_cmd(
         ctx=ctx,
         arg1=seednum,
         loop=loop,
         logger=logger
     )
+    await ctx.message.remove_reaction('⌚',ctx.bot.user)
     
 #handle errors, use our standard error handler to simplify things
 @qualifier.error
 async def qualifier_error(ctx, error):
     await helpers.error_handle(ctx, error, logger, 'qualifier')
+    await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 
 @ircbot.on('CLIENT_CONNECT')
