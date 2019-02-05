@@ -54,6 +54,18 @@ async def on_ready():
     except Exception as e:
         print(e)
 
+@discordbot.event
+async def on_voice_state_update(member, before, after):
+    if not after.channel == None:
+        if after.channel.name in config['voice_channel_role'][member.guild.id]:
+            role = discord.utils.get(member.guild.roles, name=config['voice_channel_role'][member.guild.id][after.channel.name]['role_name'])
+            await member.add_roles(role)
+    if not before.channel == None:
+        if before.channel.name in config['voice_channel_role'][member.guild.id]:
+            role = discord.utils.get(member.guild.roles, name=config['voice_channel_role'][member.guild.id][before.channel.name]['role_name'])
+            await member.remove_roles(role)
+    return
+
 # make sure that admins can only do this in the public version of the bot!
 # @discordbot.command(hidden=True)
 # async def srlcmd(ctx, op, channel=None, target=None, message=None):
