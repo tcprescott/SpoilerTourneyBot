@@ -2,6 +2,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 import math
 import asyncio
 
+from discord.ext import commands
+
 import spoilerbot.config as cfg
 config = cfg.get_config()
 
@@ -10,11 +12,10 @@ def get_creds():
       ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive',
       'https://www.googleapis.com/auth/spreadsheets'])
 
-def check_cmd_filter(guildid, channelname, cmd):
-    if not channelname in config['cmd_filters'][cmd][guildid]:
-        return True
-    else:
-        return False
+def has_any_channel(*channels):
+    async def predicate(ctx):
+        return ctx.channel and ctx.channel.name in channels
+    return commands.check(predicate)
 
 async def error_handle(ctx,error,logger,cmd):
     await ctx.message.add_reaction('👎')

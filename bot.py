@@ -67,54 +67,43 @@ async def on_voice_state_update(member, before, after):
     return
 
 # make sure that admins can only do this in the public version of the bot!
-# @discordbot.command(hidden=True)
-# async def srlcmd(ctx, op, channel=None, target=None, message=None):
-#     await ctx.message.add_reaction('⌚')
-#     ircbot.send(op, channel=channel, target=target, message=message)
-#     await ctx.message.remove_reaction('⌚',ctx.bot.user)
+@discordbot.command()
+@commands.has_any_role('admin')
+async def srlcmd(ctx, op, channel=None, target=None, message=None):
+    await ctx.message.add_reaction('⌚')
+    ircbot.send(op, channel=channel, target=target, message=message)
+    await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 #restreamrace command
 @discordbot.command(
     help='Begin a race to be restreamed.  Should be ran by a restreamer or broadcast operator.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
     brief='Begin a restreamed race'
 )
+@commands.has_any_role('admin','moderator','bracket','sg-crew')
+@helpers.has_any_channel('bracket','speedgaming','restreamer','bot-testing')
 async def bracketrace(ctx, sg_race_id=None, srl_channel=None):
     await ctx.message.add_reaction('⌚')
     await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
-@bracketrace.error
-async def bracketrace_error(ctx, error):
-    await helpers.error_handle(ctx, error, logger, 'bracketrace')
-    await ctx.message.remove_reaction('⌚',ctx.bot.user)
-
 @discordbot.command(
-    help='Begin a race to be restreamed.  Should be ran by a restreamer or broadcast operator.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
+    help='Begin a race to be restreamed, without SRL functionality.\n\nsg_race_id should be the ID of the race on the SG schedule',
     brief='Begin a restreamed race',
-    hidden=True
 )
+@commands.has_any_role('admin','moderator')
 async def nosrlrace(ctx, sg_race_id=None):
     await ctx.message.add_reaction('⌚')
     await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, loop=loop, ircbot=ircbot, nosrl=True)
-    await ctx.message.remove_reaction('⌚',ctx.bot.user)
-
-@nosrlrace.error
-async def nosrlrace_error(ctx, error):
-    await helpers.error_handle(ctx, error, logger, 'nosrlrace')
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 @discordbot.command(
     help='Begin a practice skirmish.\n\ntitle should title of the match in quotes\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
     brief='Begin a practice skirmish',
 )
+@helpers.has_any_channel('practice_racing','bot-testing')
 async def skirmish(ctx, title=None, srl_channel=None):
     await ctx.message.add_reaction('⌚')
     await bracket.bracketrace(ctx=ctx, arg1=title, arg2=srl_channel, loop=loop, ircbot=ircbot, skirmish=True)
-    await ctx.message.remove_reaction('⌚',ctx.bot.user)
-
-@skirmish.error
-async def skirmish_error(ctx, error):
-    await helpers.error_handle(ctx, error, logger, 'skirmish')
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 @discordbot.command(
@@ -126,23 +115,14 @@ async def practice(ctx):
     await bracket.practice(ctx=ctx, loop=loop)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
-@practice.error
-async def practice_error(ctx, error):
-    await helpers.error_handle(ctx, error, logger, 'practice')
-    await ctx.message.remove_reaction('⌚',ctx.bot.user)
-
 @discordbot.command(
     help='Sends you a DM with bracket information',
     brief='Re-request details for a race.'
 )
+@commands.has_any_role('admin','commentator','tracker','sg-crew','restreamer','qualifier','bracket')
 async def resend(ctx, channel=None):
     await ctx.message.add_reaction('⌚')
     await bracket.resend(ctx, loop, ircbot, channel)
-    await ctx.message.remove_reaction('⌚',ctx.bot.user)
-
-@resend.error
-async def resend_error(ctx, error):
-    await helpers.error_handle(ctx, error, logger, 'resend')
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 @discordbot.command(
@@ -168,6 +148,8 @@ async def mudora(ctx):
     help='Request a verification key to begin a qualifier run.\n\n*seednum* is the number of the seed you wish to play.',
     brief='Request a qualifier verification key'
 )
+@commands.has_any_role('admin','moderator','qualifier')
+@helpers.has_any_channel('qualifier','bot-testing')
 async def qualifier(ctx, seednum=''):
     await ctx.message.add_reaction('⌚')
     await qual.qualifier_cmd(
@@ -177,13 +159,23 @@ async def qualifier(ctx, seednum=''):
         logger=logger
     )
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
-    
+
 #handle errors, use our standard error handler to simplify things
-@qualifier.error
-async def qualifier_error(ctx, error):
-    await helpers.error_handle(ctx, error, logger, 'qualifier')
+@discordbot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CheckFailure):
+        await ctx.message.add_reaction('🚫')
+        return
+    await ctx.send(error)
+    await helpers.error_handle(ctx, error, logger, ctx.invoked_with)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
+@discordbot.check
+async def globally_block_dms(ctx):
+    if ctx.guild is None:
+        return False
+    else:
+        return True
 
 @ircbot.on('CLIENT_CONNECT')
 async def connect(**kwargs):
