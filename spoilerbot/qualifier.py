@@ -26,8 +26,8 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
         player = ctx.author,
         seednum = arg1,
     ))
-    if helpers.check_cmd_filter(ctx.guild.id,ctx.channel.name,'qualifier',config):
-        return
+    # if helpers.check_cmd_filter(ctx.guild.id,ctx.channel.name,'qualifier',config):
+    #     return
 
     try:
         seednum=int(arg1)
