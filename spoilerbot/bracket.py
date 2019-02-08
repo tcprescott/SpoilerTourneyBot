@@ -338,8 +338,7 @@ async def write_json_to_disk(spoiler, hash):
     sorteddict['Prizes'] = {}
     for dungeon, prize in prizemap:
         sorteddict['Prizes'][dungeon] = s[dungeon][prize]
-
-    sorteddict['meta']           = s['meta']
+    sorteddict['Special']        = s['Special']
     sorteddict['Hyrule Castle']  = sort_dict(s['Hyrule Castle'])
     sorteddict['Eastern Palace'] = sort_dict(s['Eastern Palace'])
     sorteddict['Desert Palace']  = sort_dict(s['Desert Palace'])
@@ -356,7 +355,7 @@ async def write_json_to_disk(spoiler, hash):
     sorteddict['Light World']    = sort_dict(s['Light World'])
     sorteddict['Death Mountain'] = sort_dict(s['Death Mountain'])
     sorteddict['Dark World']     = sort_dict(s['Dark World'])
-    sorteddict['Special']        = s['Special']
+    sorteddict['meta']           = s['meta']
 
     for dungeon, prize in prizemap:
         del sorteddict[dungeon][prize]
