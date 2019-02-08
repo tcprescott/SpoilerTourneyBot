@@ -80,7 +80,7 @@ async def srlcmd(ctx, op, channel=None, target=None, message=None):
     brief='Begin a restreamed race'
 )
 @commands.has_any_role('admin','moderator','bracket','sg-crew')
-@helpers.has_any_channel('bracket','speedgaming','restreamer','bot-testing')
+@helpers.has_any_channel('brackets','speedgaming','restreamer','bot-testing')
 async def bracketrace(ctx, sg_race_id=None, srl_channel=None):
     await ctx.message.add_reaction('⌚')
     await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
