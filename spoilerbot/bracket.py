@@ -19,7 +19,6 @@ async def practice(ctx, loop):
         randomizer='item', # optional, defaults to item
         baseurl=config['alttpr_website']['baseurl'],
         seed_baseurl=config['alttpr_website']['baseurl_seed'],
-        append_json_extension=False,
         settings={
             "difficulty": "normal",
             "enemizer": False,
@@ -99,7 +98,6 @@ async def resend(ctx, loop, ircbot, channel):
         randomizer='item',
         baseurl=config['alttpr_website']['baseurl'],
         seed_baseurl=config['alttpr_website']['baseurl_seed'],
-        append_json_extension=False,
         hash=hash
     )
 
@@ -196,7 +194,6 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False, skir
         randomizer='item', # optional, defaults to item
         baseurl=config['alttpr_website']['baseurl'],
         seed_baseurl=config['alttpr_website']['baseurl_seed'],
-        append_json_extension=False,
         settings={
             "difficulty": "normal",
             "enemizer": False,

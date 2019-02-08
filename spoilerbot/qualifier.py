@@ -54,7 +54,6 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
         randomizer='item',
         baseurl=config['alttpr_website']['baseurl'],
         seed_baseurl=config['alttpr_website']['baseurl_seed'],
-        append_json_extension=False,
         hash=qualifier_seed[0]
     )
 
