@@ -23,7 +23,7 @@ class SpoilerBotDatabase():
 
     async def get_qualifier_seed(self, id):
         cursor = await self.conn.cursor()
-        sql = 'SELECT hash FROM qualifier_seeds where id=%s'
+        sql = 'SELECT hash, spoilerlog FROM qualifier_seeds where id=%s'
         result = await cursor.execute(sql, (id))
         return await cursor.fetchone()
 

@@ -57,6 +57,7 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
         hash=qualifier_seed[0]
     )
 
+    spoilerlog = qualifier_seed[1]
     verificationkey = await generate_verification_key(loop)
 
 
@@ -80,8 +81,9 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
         'This is the verification key that is required to be in the filename of your run:\n`{verificationkey}`\n\n' \
         'Seed number: {seednum}\n' \
         'Timestamp: {timestamp}\n' \
+        'Permalink: {permalink}\n' \
         'File select code: [{fscode}]\n' \
-        'Permalink: {permalink}\n\n' \
+        'Spoiler log: {spoilerlog}\n\n' \
         'Submit your run here once completed: <{submiturl}>\n\n'
         'You have 15 minutes from the receipt of this message to start your run!\n' \
         '**Please DM an admin immediately if this was requested in error**, otherwise it may be counted as a DNF (slowest time plus 30 minutes).\n\n' \
@@ -91,6 +93,7 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
             timestamp=timestamp,
             fscode=fscode,
             permalink=permalink,
+            spoilerlog=spoilerlog,
             submiturl=config['qualifier_form_prefill'].format(
                 discordtag=urllib.parse.quote_plus(ctx.author.name + '#' + ctx.author.discriminator),
                 verificationkey=verificationkey,

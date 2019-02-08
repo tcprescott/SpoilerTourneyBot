@@ -14,7 +14,7 @@ async def create_seed(
             append_json_extension=True,
             username='',
             password=''):
-    seed = alttpr(settings, hash, randomizer, baseurl, seed_baseurl, username, password)
+    seed = alttpr(settings, hash, randomizer, baseurl, seed_baseurl, append_json_extension, username, password)
     await seed._init()
     return seed
 
