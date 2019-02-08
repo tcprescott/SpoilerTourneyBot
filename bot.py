@@ -172,7 +172,7 @@ async def on_command_error(ctx, error):
 
 @discordbot.check
 async def globally_block_dms(ctx):
-    if ctx.guild is None:
+    if ctx.guild is None and not ctx.invoked_with in ['practice']:
         return False
     else:
         return True
