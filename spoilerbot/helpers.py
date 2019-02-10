@@ -25,13 +25,13 @@ def has_any_channel(*channels):
     return commands.check(predicate)
 
 # our global error handler
-async def error_handle(ctx,error,logger,cmd):
+async def error_handle(ctx,error,logger):
     await ctx.message.add_reaction('👎')
     await ctx.send('{author}, there was a problem with your request.  Ping an admin if this condition persists.'.format(
         author=ctx.author.mention
     ))
     logger.error('{cmd} error - {servername} - {channelname} - {player} - {error}'.format(
-        cmd = cmd,
+        cmd = ctx.invoked_with,
         servername = ctx.guild.name,
         channelname = ctx.channel.name,
         player = ctx.author,
@@ -43,7 +43,7 @@ async def error_handle(ctx,error,logger,cmd):
     msg = 'Error in {cmd}:\n\n' \
     'Error: {error}\n' \
     'Channel: {channel}\n'.format(
-        cmd = cmd,
+        cmd = ctx.invoked_with,
         error=error,
         channel=ctx.channel.name,
     )

@@ -147,6 +147,10 @@ async def beer(ctx):
 async def mudora(ctx):
     await ctx.send('<:mudora:536293302689857567>')
 
+@discordbot.command(hidden=True)
+@commands.has_any_role('admin')
+async def throwerror(ctx):
+    raise Exception
 
 #qualifier command, this has been condensed and relocated to the spoilerbot/qualifier.py
 #we also make sure that only admins, mods, and qualifier players can run this command, and that it is run in the qualifier channel
@@ -190,8 +194,10 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
         await ctx.message.add_reaction('🚫')
         return
+    if isinstance(error, commands.CommandNotFound):
+        return
     # await ctx.send(error)
-    await helpers.error_handle(ctx, error, logger, ctx.invoked_with)
+    await helpers.error_handle(ctx, error, logger)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 #Bot should only respond to DMs for the practice command.  Other commands should be ignored.
