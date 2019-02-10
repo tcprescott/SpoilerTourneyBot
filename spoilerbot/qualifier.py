@@ -165,3 +165,72 @@ async def generate_verification_key(loop):
             return key
     sbdb.close()
     raise RuntimeError('Verification key generation failed.')
+
+async def gen_qualifier_seed(ctx, loop, seednum=None):
+    try:
+        seednum=int(seednum)
+    except ValueError:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, that is not a number.'.format(
+            author=ctx.author.mention
+        ))
+        return
+
+    spdb = db.SpoilerBotDatabase(loop)
+    await spdb.connect()
+    qualifier_seed = await spdb.get_qualifier_seed(seednum)
+
+    if not qualifier_seed == None:
+        await ctx.message.add_reaction('👎')
+        await ctx.send('{author}, that seed already exists.  It would need to be manually purged from the database first.'.format(
+            author=ctx.author.mention
+        ))
+        await spdb.close()
+        return
+    
+    seed = await pyz3r_asyncio.create_seed(
+        randomizer='item', # optional, defaults to item
+        baseurl=config['alttpr_website']['baseurl'],
+        seed_baseurl=config['alttpr_website']['baseurl_seed'],
+        settings={
+            "difficulty": "normal",
+            "enemizer": False,
+            "logic": "NoGlitches",
+            "mode": "open",
+            "tournament": True,
+            "variation": "none",
+            "weapons": "randomized",
+            "lang": "en"
+        }
+    )
+
+    rdb = db.RandomizerDatabase(loop)
+    await rdb.connect()
+    spoiler_log = await rdb.get_seed_spoiler(seed.hash)
+    await rdb.close()
+
+    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log[0], seed.hash)
+
+    await spdb.insert_qualifier_seed(
+        id=seednum,
+        hash=seed.hash,
+        spoilerlog=spoiler_log_url,
+    )
+
+    modlogchannel = ctx.guild.get_channel(config['log_channel'][ctx.guild.id])
+    msg = '-----------------------------------------\n' \
+    'Qualifier Seed #{seednum}:\n\n' \
+    'Permalink: {permalink}\n' \
+    'Code: [{code}]\n' \
+    'Spoiler log: {spoilerlog}'.format(
+        seednum=seednum,
+        permalink=await seed.url(),
+        spoilerlog=spoiler_log_url,
+        code=' | '.join(await seed.code())
+    )
+    await modlogchannel.send(msg)
+    await ctx.send(msg)
+
+    await spdb.close()
+
+    await ctx.message.add_reaction('👍')

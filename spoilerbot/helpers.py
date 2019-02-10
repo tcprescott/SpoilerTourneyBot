@@ -2,6 +2,10 @@ from oauth2client.service_account import ServiceAccountCredentials
 import math
 import asyncio
 
+import random, string
+import json
+import aiofiles
+
 from discord.ext import commands
 
 import spoilerbot.config as cfg
@@ -44,3 +48,64 @@ async def error_handle(ctx,error,logger,cmd):
         channel=ctx.channel.name,
     )
     await modlogchannel.send(msg)
+
+async def write_json_to_disk(spoiler, hash):
+    filename = 'spoilertourneylog__' + hash + '__' + ''.join(random.choices(string.ascii_letters + string.digits, k=6)) + '.txt'
+
+    # magic happens here to make it pretty-printed and tournament-compliant
+    s = json.loads(spoiler)
+    del s['meta']['_meta']
+    del s['playthrough']
+    del s['Shops'] #QOL this information is useless for this tournament
+    del s['Bosses'] #QOL this information is useful only for enemizer
+
+    sorteddict = {}
+
+    prizemap = [
+        ['Eastern Palace', 'Eastern Palace - Prize'],
+        ['Desert Palace', 'Desert Palace - Prize'],
+        ['Tower Of Hera', 'Tower of Hera - Prize'],
+        ['Dark Palace', 'Palace of Darkness - Prize'],
+        ['Swamp Palace', 'Swamp Palace - Prize'],
+        ['Skull Woods', 'Skull Woods - Prize'],
+        ['Thieves Town', 'Thieves\' Town - Prize'],
+        ['Ice Palace', 'Ice Palace - Prize'],
+        ['Misery Mire', 'Misery Mire - Prize'],
+        ['Turtle Rock', 'Turtle Rock - Prize'],
+    ]
+    sorteddict['Prizes'] = {}
+    for dungeon, prize in prizemap:
+        sorteddict['Prizes'][dungeon] = s[dungeon][prize]
+    sorteddict['Special']        = s['Special']
+    sorteddict['Hyrule Castle']  = sort_dict(s['Hyrule Castle'])
+    sorteddict['Eastern Palace'] = sort_dict(s['Eastern Palace'])
+    sorteddict['Desert Palace']  = sort_dict(s['Desert Palace'])
+    sorteddict['Tower Of Hera']  = sort_dict(s['Tower Of Hera'])
+    sorteddict['Castle Tower']   = sort_dict(s['Castle Tower'])
+    sorteddict['Dark Palace']    = sort_dict(s['Dark Palace'])
+    sorteddict['Swamp Palace']   = sort_dict(s['Swamp Palace'])
+    sorteddict['Skull Woods']    = sort_dict(s['Skull Woods'])
+    sorteddict['Thieves Town']   = sort_dict(s['Thieves Town'])
+    sorteddict['Ice Palace']     = sort_dict(s['Ice Palace'])
+    sorteddict['Misery Mire']    = sort_dict(s['Misery Mire'])
+    sorteddict['Turtle Rock']    = sort_dict(s['Turtle Rock'])
+    sorteddict['Ganons Tower']   = sort_dict(s['Ganons Tower'])
+    sorteddict['Light World']    = sort_dict(s['Light World'])
+    sorteddict['Death Mountain'] = sort_dict(s['Death Mountain'])
+    sorteddict['Dark World']     = sort_dict(s['Dark World'])
+    sorteddict['meta']           = s['meta']
+
+    for dungeon, prize in prizemap:
+        del sorteddict[dungeon][prize]
+
+    async with aiofiles.open(config['spoiler_log_local'] + '/' + filename, "w", newline='\r\n') as out:
+        await out.write(json.dumps(sorteddict, indent=4))
+        await out.flush()
+
+    return config['spoiler_log_url_base'] + '/' + filename
+
+def sort_dict(dict):
+    sorteddict = {}
+    for key in sorted(dict):
+        sorteddict[key] = dict[key]
+    return sorteddict

@@ -27,6 +27,12 @@ class SpoilerBotDatabase():
         result = await cursor.execute(sql, (id))
         return await cursor.fetchone()
 
+    async def insert_qualifier_seed(self, id, hash, spoilerlog):
+        cursor = await self.conn.cursor()
+        sql = "INSERT INTO qualifier_seeds (id, hash, spoilerlog) VALUES (%s, %s, %s)"
+        await cursor.execute(sql, (id, hash, spoilerlog))
+        await self.conn.commit()
+
     async def record_verification_key(self, verification_key):
         cursor = await self.conn.cursor()
         sql = "INSERT INTO qualifier_requests (verification_key) VALUES (%s)"

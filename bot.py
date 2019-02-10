@@ -166,6 +166,23 @@ async def qualifier(ctx, seednum=''):
     )
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
+#genqualifier
+#allow an admin to generate a qualifier seed and store it in the database
+@discordbot.command(
+    help='Generate a qualifier seeed for others to request.  Only admins should run this.',
+    brief='Generate a qualifier seeed for others to request.'
+)
+@commands.has_any_role('admin')
+async def genqualifier(ctx, seednum=''):
+    await ctx.message.add_reaction('⌚')
+    await qual.gen_qualifier_seed(
+        ctx=ctx,
+        seednum=seednum,
+        loop=loop
+    )
+    await ctx.message.remove_reaction('⌚',ctx.bot.user)
+
+
 #handle errors, using a common handler
 #also handles CheckFailures, in this case it'll react with a prohibitory symbol
 @discordbot.event
