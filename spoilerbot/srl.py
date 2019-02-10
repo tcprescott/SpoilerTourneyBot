@@ -158,7 +158,7 @@ async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id,
         tournament=tournament,
         title=title,
         permalink=await seed.url(),
-        code='|'.join(await seed.code())
+        code=' | '.join(await seed.code())
     ))
     ircbot.send('PRIVMSG', target=channel, message='.join')
     await wait_for_ready_up(raceid)

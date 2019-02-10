@@ -40,7 +40,7 @@ async def practice(ctx, loop):
     spoiler_log_url = await helpers.write_json_to_disk(spoiler_log[0], seed.hash)
 
     permalink = await seed.url()
-    fscode = '|'.join(await seed.code())
+    fscode = ' | '.join(await seed.code())
 
     dm = ctx.author.dm_channel
     if dm == None:
@@ -281,7 +281,7 @@ async def generate_bracket_dm(seed, players, channel):
         player2=players[1],
         srlchannel=channel,
         permalink=await seed.url(),
-        fscode='|'.join(await seed.code()))
+        fscode=' | '.join(await seed.code()))
     return msg
 
 async def generate_skirmish_msg(seed, title, channel):
