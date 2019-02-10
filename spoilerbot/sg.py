@@ -18,8 +18,8 @@ class SpeedGamingEpisode():
     async def _init(self):
         async with aiohttp.ClientSession() as session:
             #using a mock json doc instead of querying SG API
-            async with session.get('https://server1.the-synack.com/sg_test/sgtest.json') as response:
-            # async with session.get(config['sg_api_endpoint'] + '/episode/?id=' + str(self.episodeid)) as response:
+            # async with session.get('https://server1.the-synack.com/sg_test/sgtest.json') as response:
+            async with session.get(config['sg_api_endpoint'] + '/episode/?id=' + str(self.episodeid)) as response:
                 raw = await response.text()
                 self.episode = json.loads(raw)
 

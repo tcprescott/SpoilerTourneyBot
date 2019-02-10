@@ -1,12 +1,16 @@
+# the thing that makes it all work
 import asyncio
 
+# bot libraries
 from discord.ext import commands
 import discord
 import bottom
 
+# logging libraries
 import logging
 import logging.handlers as handlers
 
+# spoilerbot libraries
 import spoilerbot.config as cfg
 import spoilerbot.qualifier as qual
 import spoilerbot.bracket as bracket
@@ -14,11 +18,8 @@ import spoilerbot.helpers as helpers
 import spoilerbot.srl as srl
 import spoilerbot.sg as sg
 
+# our special asyncio version of pyz3r
 import pyz3r_asyncio
-
-import re
-
-
 
 
 config = cfg.get_config()
@@ -55,6 +56,8 @@ async def on_ready():
     except Exception as e:
         print(e)
 
+#automatically adds/removes roles based on the voice channels that are entered/exited
+#this should be its own function
 @discordbot.event
 async def on_voice_state_update(member, before, after):
     if not after.channel == None:
@@ -67,15 +70,16 @@ async def on_voice_state_update(member, before, after):
             await member.remove_roles(role)
     return
 
-# make sure that admins can only do this in the public version of the bot!
+#Allow admins to issue arbitrary IRC commands to the IRC bot (useful for fixing something that broke)
 @discordbot.command()
 @commands.has_any_role('admin')
 async def srlcmd(ctx, op, channel=None, target=None, message=None):
     await ctx.message.add_reaction('⌚')
     ircbot.send(op, channel=channel, target=target, message=message)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
+    await ctx.message.add_reaction('👍')
 
-#restreamrace command
+#the bracketrace command!
 @discordbot.command(
     help='Begin a race to be restreamed.  Should be ran by a restreamer or broadcast operator.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
     brief='Begin a restreamed race'
@@ -87,8 +91,9 @@ async def bracketrace(ctx, sg_race_id=None, srl_channel=None):
     await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, arg2=srl_channel, loop=loop, ircbot=ircbot)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
+# This will only be available to admins/moderators as needed (SRL and/or IRC bot is broken for some reason and we need to manually operate the race).
 @discordbot.command(
-    help='Begin a race to be restreamed, without SRL functionality.\n\nsg_race_id should be the ID of the race on the SG schedule',
+    help='Begin a race to be restreamed, without SRL functionality.  Should only be ran if SRL or IRC Bot is broken.\n\nsg_race_id should be the ID of the race on the SG schedule',
     brief='Begin a restreamed race',
 )
 @commands.has_any_role('admin','moderator')
@@ -97,16 +102,18 @@ async def nosrlrace(ctx, sg_race_id=None):
     await bracket.bracketrace(ctx=ctx, arg1=sg_race_id, loop=loop, ircbot=ircbot, nosrl=True)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
+# practice skirmishes, basically sets everything up like normal except don't use the SG schedule
 @discordbot.command(
     help='Begin a practice skirmish.\n\ntitle should title of the match in quotes\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
     brief='Begin a practice skirmish',
 )
-@helpers.has_any_channel('practice_racing','bot-testing')
+@helpers.has_any_channel('practice_racing','bot-console','bot-testing')
 async def skirmish(ctx, title=None, srl_channel=None):
     await ctx.message.add_reaction('⌚')
     await bracket.bracketrace(ctx=ctx, arg1=title, arg2=srl_channel, loop=loop, ircbot=ircbot, skirmish=True)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
+# generate practice seeds with tournament spoiler logs
 @discordbot.command(
     help='Generates a seed and sends the requestor a DM w/ the spoiler log, permalink, and code.  Intended for practice.',
     brief='Generate a practice seed.'
@@ -116,6 +123,7 @@ async def practice(ctx):
     await bracket.practice(ctx=ctx, loop=loop)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
+# lets commentators, trackers, sg-crew, restreamers, or players get sent a copy of the seed and code (not spoiler log)
 @discordbot.command(
     help='Sends you a DM with bracket information',
     brief='Re-request details for a race.'
@@ -126,25 +134,22 @@ async def resend(ctx, channel=None):
     await bracket.resend(ctx, loop, ircbot, channel)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
-@discordbot.command(
-    hidden=True
-)
+# bunch of fluff because I like fluff
+@discordbot.command(hidden=True)
 async def pizza(ctx):
     await ctx.send('🍕')
 
-@discordbot.command(
-    hidden=True
-)
+@discordbot.command(hidden=True)
 async def beer(ctx):
     await ctx.send('🍺')
 
-@discordbot.command(
-    hidden=True
-)
+@discordbot.command(hidden=True)
 async def mudora(ctx):
     await ctx.send('<:mudora:536293302689857567>')
 
+
 #qualifier command, this has been condensed and relocated to the spoilerbot/qualifier.py
+#we also make sure that only admins, mods, and qualifier players can run this command, and that it is run in the qualifier channel
 @discordbot.command(
     help='Request a verification key to begin a qualifier run.\n\n*seednum* is the number of the seed you wish to play.',
     brief='Request a qualifier verification key'
@@ -161,16 +166,18 @@ async def qualifier(ctx, seednum=''):
     )
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
-#handle errors, use our standard error handler to simplify things
+#handle errors, using a common handler
+#also handles CheckFailures, in this case it'll react with a prohibitory symbol
 @discordbot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
         await ctx.message.add_reaction('🚫')
         return
-    await ctx.send(error)
+    # await ctx.send(error)
     await helpers.error_handle(ctx, error, logger, ctx.invoked_with)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
+#Bot should only respond to DMs for the practice command.  Other commands should be ignored.
 @discordbot.check
 async def globally_block_dms(ctx):
     if ctx.guild is None and not ctx.invoked_with in ['practice']:
@@ -178,10 +185,12 @@ async def globally_block_dms(ctx):
     else:
         return True
 
+# Connects the IRC Bot!
 @ircbot.on('CLIENT_CONNECT')
 async def connect(**kwargs):
     await srl.connect(ircbot, config, loop)
 
+# respond to IRC PINGs, so we can stay connected to SRL
 # this is a pretty low level library, so yea
 @ircbot.on('PING')
 def keepalive(message, **kwargs):
@@ -191,11 +200,14 @@ def keepalive(message, **kwargs):
 # log messages, respond to .spoilerstart and .spoilerseed commands
 @ircbot.on('PRIVMSG')
 async def message(nick, target, message, **kwargs):
-    await srl.write_chat_log(
-        channel=target,
-        author=nick,
-        message=message
-    )
+    try:
+        await srl.write_chat_log(
+            channel=target,
+            author=nick,
+            message=message
+        )
+    except:
+        pass
     if message == '.spoilerstart':
         await srl.spoilerstart(
             channel=target,
@@ -212,6 +224,7 @@ async def message(nick, target, message, **kwargs):
             loop=loop
         )
 
+# log when NICKSERV accepts our auth request, mostly for troubleshooting failed starts of the SRL bot
 @ircbot.on('NOTICE')
 def notice(message, **kwargs):
     if message=='Password accepted - you are now recognized.':

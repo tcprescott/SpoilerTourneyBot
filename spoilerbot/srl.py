@@ -17,6 +17,7 @@ import spoilerbot.database as db
 import spoilerbot.config as cfg
 config = cfg.get_config()
 
+# this coroutine is what we'll use to actually connect to SRL
 async def connect(ircbot, config, loop):
     ircbot.send('NICK', nick=config['srl_irc_nickname'])
     ircbot.send('USER', user=config['srl_irc_nickname'],
@@ -40,26 +41,33 @@ async def connect(ircbot, config, loop):
 
     ircbot.send('JOIN', channel='#speedrunslive')
 
+# handler for the .spoilerstart command
 async def spoilerstart(channel, author, ircbot, discordbot, loop):
+    # ignore SRL lobby
     if channel == '#speedrunslive':
         return
     # ignore private messages
     if channel == config['srl_irc_nickname']:
         return
 
+    # extract the raceid from the channel name
     if re.search('^#srl-[a-z0-9]{5}$',channel):
         raceid = channel.partition('-')[-1]
     else:
-        return
+        return #we should probably raise an exception instead so we're not hiding an error
 
+    # check to make sure the race is open for entry (not in progress or finished)
     if not await is_race_open(raceid):
         ircbot.send('NOTICE', target=channel, author=author, message='This race is not currently open for entry.')
         return
 
+    # make sure the bot isn't entered into the race already
+    # If the bot died and was restarted, a tournament admin might need to force the bot out of the channel
     if not await get_single_player(raceid, player=config['srl_irc_nickname'].lower()) == None:
         ircbot.send('PRIVMSG', target=channel, message='Bot is already entered into this race.')
         return
 
+    # retrieve the seed details based on what we stored in the database when running the $bracketrace or $skirmish commands in discord
     sbdb = db.SpoilerBotDatabase(loop)
     await sbdb.connect()
     racedata = await sbdb.get_bracket_race(raceid)
@@ -68,6 +76,7 @@ async def spoilerstart(channel, author, ircbot, discordbot, loop):
         ircbot.send('PRIVMSG', target=channel, message='This race is not yet registered with SpoilerTourneyBot.  Please run $bracketrace command in discord.')
         return
 
+    # give each part of the racedata a friendly variable name to make things easier to read
     sg_episode_id = racedata[0]
     srl_race_id = racedata[1]
     hash = racedata[2]
@@ -75,6 +84,7 @@ async def spoilerstart(channel, author, ircbot, discordbot, loop):
     spoiler_url = racedata[4]
     initiated_by = racedata[5]
 
+    # retrieve the seed details from the randomizer website
     seed = await pyz3r_asyncio.create_seed(
         randomizer='item',
         baseurl=config['alttpr_website']['baseurl'],
@@ -83,6 +93,7 @@ async def spoilerstart(channel, author, ircbot, discordbot, loop):
         hash=hash
     )
 
+    # run the gatekeeper!
     await gatekeeper(
         ircbot=ircbot,
         discordbot=discordbot,
@@ -97,6 +108,7 @@ async def spoilerstart(channel, author, ircbot, discordbot, loop):
     )
 
 
+# This is a stripped down version of spoilerstart, mostly for posting the seed details in SRL chat
 async def spoilerseed(channel, author, ircbot, loop):
     if channel == '#speedrunslive':
         return
@@ -133,13 +145,15 @@ async def spoilerseed(channel, author, ircbot, loop):
         code=' | '.join(await seed.code())
     ))
 
+# the holy grail of spaghetti in this bot
 async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id, channel, spoilerlogurl, title, seed, raceid, loop):
+    # in SRL, the goal should be different if this is a skirmish (indicated by the sg_episode_id of 0)
     if sg_episode_id=='0':
         tournament='ALTTPR Spoiler Race'
     else:
         tournament='ALTTPR Spoiler Tournament'
 
-    # ircbot.send('JOIN', channel=channel)
+    # bot should already be joined to the channel
     ircbot.send('PRIVMSG', target=channel, message='.setgoal {tournament} - {title} - {permalink} - [{code}]'.format(
         tournament=tournament,
         title=title,
