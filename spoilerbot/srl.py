@@ -42,7 +42,7 @@ async def connect(ircbot, config, loop):
     ircbot.send('JOIN', channel='#speedrunslive')
 
 # handler for the .spoilerstart command
-async def spoilerstart(channel, author, ircbot, discordbot, loop):
+async def spoilerstart(channel, author, ircbot, discordbot, loop, immediate=False):
     # ignore SRL lobby
     if channel == '#speedrunslive':
         return
@@ -89,23 +89,36 @@ async def spoilerstart(channel, author, ircbot, discordbot, loop):
         randomizer='item',
         baseurl=config['alttpr_website']['baseurl'],
         seed_baseurl=config['alttpr_website']['baseurl_seed'],
-        append_json_extension=False,
         hash=hash
     )
 
-    # run the gatekeeper!
-    await gatekeeper(
-        ircbot=ircbot,
-        discordbot=discordbot,
-        initiated_by_discordtag=initiated_by,
-        sg_episode_id=sg_episode_id,
-        channel=channel,
-        spoilerlogurl=spoiler_url,
-        title=title,
-        seed=seed,
-        raceid=raceid,
-        loop=loop
-    )
+    if immediate==False:
+        # run the gatekeeper!
+        await gatekeeper(
+            ircbot=ircbot,
+            discordbot=discordbot,
+            initiated_by_discordtag=initiated_by,
+            sg_episode_id=sg_episode_id,
+            channel=channel,
+            spoilerlogurl=spoiler_url,
+            title=title,
+            seed=seed,
+            raceid=raceid,
+            loop=loop
+        )
+    else:
+        await gatekeeper_immediatestart(
+            ircbot=ircbot,
+            discordbot=discordbot,
+            initiated_by_discordtag=initiated_by,
+            sg_episode_id=sg_episode_id,
+            channel=channel,
+            spoilerlogurl=spoiler_url,
+            title=title,
+            seed=seed,
+            raceid=raceid,
+            loop=loop
+        )
 
 
 # This is a stripped down version of spoilerstart, mostly for posting the seed details in SRL chat
@@ -136,7 +149,6 @@ async def spoilerseed(channel, author, ircbot, loop):
         randomizer='item',
         baseurl=config['alttpr_website']['baseurl'],
         seed_baseurl=config['alttpr_website']['baseurl_seed'],
-        append_json_extension=False,
         hash=hash
     )
 
@@ -196,6 +208,54 @@ async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id,
         title=title,
     ))
 
+# another version of the gatekeeper, except this one 
+async def gatekeeper_immediatestart(ircbot, discordbot, initiated_by_discordtag, sg_episode_id, channel, spoilerlogurl, title, seed, raceid, loop):
+    # in SRL, the goal should be different if this is a skirmish (indicated by the sg_episode_id of 0)
+    if sg_episode_id=='0':
+        tournament='ALTTPR Spoiler Race'
+    else:
+        tournament='ALTTPR Spoiler Tournament'
+
+    # bot should already be joined to the channel
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal {tournament} - {title} - {permalink} - [{code}]'.format(
+        tournament=tournament,
+        title=title,
+        permalink=await seed.url(),
+        code=' | '.join(await seed.code())
+    ))
+    ircbot.send('PRIVMSG', target=channel, message='.join')
+    await wait_for_ready_up(raceid)
+    await asyncio.sleep(.5)
+    ready_players = await get_race_players(raceid)
+    ircbot.send('PRIVMSG', target=channel, message='.quit')
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal {tournament} - {title}'.format(
+        tournament=tournament,
+        title=title,
+    ))
+    await wait_for_race_start(raceid)
+    ircbot.send('PRIVMSG', target=channel, message='Sending spoiler log to readied players.')
+    for player in ready_players['Ready']:
+        ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
+        ircbot.send('NOTICE', channel=channel, target=player, message='This race\'s spoiler log: {spoilerurl}'.format(
+            spoilerurl=spoilerlogurl
+        ))
+        ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
+    await send_discord_dms(
+        sg_episode_id=sg_episode_id,
+        discordbot=discordbot,
+        title=title,
+        spoilerlogurl=spoilerlogurl,
+        initiated_by_discordtag=initiated_by_discordtag,
+    )
+    ircbot.send('PRIVMSG', target=channel, message='GLHF! :mudora:')
+    await countdown_timer(
+        duration_in_seconds=900,
+        srl_channel=channel,
+        loop=loop,
+        ircbot=ircbot,
+        beginmessage=True,
+    )
+
 async def get_race(raceid):
     async with aiohttp.ClientSession() as session:
         async with session.get('http://api.speedrunslive.com/races/' + raceid) as response:
@@ -220,6 +280,11 @@ async def are_ready(raceid):
     else:
         return False
 
+async def wait_for_race_start(raceid):
+    while True:
+        if await is_race_started(raceid):
+            return
+        await asyncio.sleep(1)
 
 async def wait_for_ready_up(raceid):
     readycount = 0
@@ -274,7 +339,17 @@ async def is_race_open(raceid):
             return False
     except KeyError:
         return False
-        
+
+async def is_race_started(raceid):
+    race = await get_race(raceid)
+    try:
+        if race['state'] == 3:
+            return True
+        else:
+            return False
+    except KeyError:
+        return False
+
 async def write_chat_log(channel, author, message):
     if channel == '#speedrunslive':
         return
@@ -292,7 +367,7 @@ async def write_chat_log(channel, author, message):
         await out.close()
 
 
-async def countdown_timer(duration_in_seconds, srl_channel, loop, ircbot):
+async def countdown_timer(duration_in_seconds, srl_channel, loop, ircbot, beginmessage=False):
     reminders = [900,600,300,120,60,30,10,9,8,7,6,5,4,3,2,1]
     start_time = loop.time()
     end_time = loop.time() + duration_in_seconds
@@ -320,6 +395,8 @@ async def countdown_timer(duration_in_seconds, srl_channel, loop, ircbot):
             ircbot.send('PRIVMSG', target=srl_channel, message=msg)
             reminders.remove(timeleft)
         if (loop.time() + 1) >= end_time:
+            if beginmessage:
+                ircbot.send('PRIVMSG', target=srl_channel, message=ircmessage.style('Log study has finished.  Begin!', fg='red', bold=True))
             break
         await asyncio.sleep(.5)
 
