@@ -294,7 +294,7 @@ async def wait_for_ready_up(raceid):
             await asyncio.sleep(2)
         else:
             readycount=0
-            await asyncio.sleep(10)
+            await asyncio.sleep(5)
 
         if readycount>=2:
             return
