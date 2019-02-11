@@ -239,6 +239,15 @@ async def message(nick, target, message, **kwargs):
             discordbot=discordbot,
             loop=loop
         )
+    elif message == '.spoilerimmediate':
+        await srl.spoilerstart(
+            channel=target,
+            author=nick,
+            ircbot=ircbot,
+            discordbot=discordbot,
+            loop=loop,
+            immediate=True
+        )
     elif message == '.spoilerseed':
         await srl.spoilerseed(
             channel=target,
