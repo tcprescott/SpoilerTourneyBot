@@ -89,7 +89,6 @@ async def spoilerstart(channel, author, ircbot, discordbot, loop, immediate=Fals
         randomizer='item',
         baseurl=config['alttpr_website']['baseurl'],
         seed_baseurl=config['alttpr_website']['baseurl_seed'],
-        append_json_extension=False,
         hash=hash
     )
 
@@ -150,7 +149,6 @@ async def spoilerseed(channel, author, ircbot, loop):
         randomizer='item',
         baseurl=config['alttpr_website']['baseurl'],
         seed_baseurl=config['alttpr_website']['baseurl_seed'],
-        append_json_extension=False,
         hash=hash
     )
 
