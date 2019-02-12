@@ -234,12 +234,19 @@ async def gatekeeper_immediatestart(ircbot, discordbot, initiated_by_discordtag,
     ))
     await wait_for_race_start(raceid)
     ircbot.send('PRIVMSG', target=channel, message='Sending spoiler log to readied players.')
-    for player in ready_players['Ready']:
-        ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
-        ircbot.send('NOTICE', channel=channel, target=player, message='This race\'s spoiler log: {spoilerurl}'.format(
+    if len(ready_players['Ready']) == 2:
+        for player in ready_players['Ready']:
+            ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
+            ircbot.send('NOTICE', channel=channel, target=player, message='This race\'s spoiler log: {spoilerurl}'.format(
+                spoilerurl=spoilerlogurl
+            ))
+            ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
+    else:
+        ircbot.send('PRIVMSG', target=player, message='---------------')
+        ircbot.send('PRIVMSG', target=player, message='This race\'s spoiler log: {spoilerurl}'.format(
             spoilerurl=spoilerlogurl
         ))
-        ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
+        ircbot.send('PRIVMSG', target=player, message='---------------')
     await send_discord_dms(
         sg_episode_id=sg_episode_id,
         discordbot=discordbot,
