@@ -396,7 +396,7 @@ async def countdown_timer(duration_in_seconds, srl_channel, loop, ircbot, beginm
             reminders.remove(timeleft)
         if (loop.time() + 1) >= end_time:
             if beginmessage:
-                ircbot.send('PRIVMSG', target=srl_channel, message=ircmessage.style('Log study has finished.  Begin!', fg='red', bold=True))
+                ircbot.send('PRIVMSG', target=srl_channel, message=ircmessage.style('Log study has finished.  Begin racing!', fg='red', bold=True))
             break
         await asyncio.sleep(.5)
 
