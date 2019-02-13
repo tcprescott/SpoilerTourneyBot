@@ -37,7 +37,7 @@ async def practice(ctx, loop):
     spoiler_log = await rdb.get_seed_spoiler(seed.hash)
     await rdb.close()
 
-    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log[0], seed.hash)
+    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log[0], seed)
 
     permalink = await seed.url()
     fscode = ' | '.join(await seed.code())
@@ -212,7 +212,7 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False, skir
     spoiler_log = await rdb.get_seed_spoiler(seed.hash)
     await rdb.close()
 
-    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log[0], seed.hash)
+    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log[0], seed)
 
     modlogchannel = ctx.guild.get_channel(config['log_channel'][ctx.guild.id])
     msg = 'Race {title}:\n\n' \

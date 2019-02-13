@@ -49,8 +49,9 @@ async def error_handle(ctx,error,logger):
     )
     await modlogchannel.send(msg)
 
-async def write_json_to_disk(spoiler, hash):
-    filename = 'spoilertourneylog__' + hash + '__' + ''.join(random.choices(string.ascii_letters + string.digits, k=6)) + '.txt'
+async def write_json_to_disk(spoiler, seed):
+    code = await seed.code()
+    filename = 'spoilertourneylog__' + seed.hash + '__' + '-'.join(code).replace(' ', '') + '__' + ''.join(random.choices(string.ascii_letters + string.digits, k=4)) + '.txt'
 
     # magic happens here to make it pretty-printed and tournament-compliant
     s = json.loads(spoiler)
@@ -94,6 +95,9 @@ async def write_json_to_disk(spoiler, hash):
     sorteddict['Death Mountain'] = sort_dict(s['Death Mountain'])
     sorteddict['Dark World']     = sort_dict(s['Dark World'])
     sorteddict['meta']           = s['meta']
+    sorteddict['meta']['code']   = code
+    sorteddict['meta']['hash']   = seed.hash
+    sorteddict['meta']['permalink'] = await seed.url()
 
     for dungeon, prize in prizemap:
         del sorteddict[dungeon][prize]

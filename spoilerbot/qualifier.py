@@ -209,7 +209,7 @@ async def gen_qualifier_seed(ctx, loop, seednum=None):
     spoiler_log = await rdb.get_seed_spoiler(seed.hash)
     await rdb.close()
 
-    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log[0], seed.hash)
+    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log[0], seed)
 
     await spdb.insert_qualifier_seed(
         id=seednum,
