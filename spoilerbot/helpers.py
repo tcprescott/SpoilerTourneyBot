@@ -95,7 +95,6 @@ async def write_json_to_disk(spoiler, seed):
     sorteddict['Death Mountain'] = sort_dict(s['Death Mountain'])
     sorteddict['Dark World']     = sort_dict(s['Dark World'])
     sorteddict['meta']           = s['meta']
-    sorteddict['meta']['code']   = code
     sorteddict['meta']['hash']   = seed.hash
     sorteddict['meta']['permalink'] = await seed.url()
 
