@@ -242,11 +242,11 @@ async def gatekeeper_immediatestart(ircbot, discordbot, initiated_by_discordtag,
             ))
             ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
     else:
-        ircbot.send('PRIVMSG', target=player, message='---------------')
-        ircbot.send('PRIVMSG', target=player, message='This race\'s spoiler log: {spoilerurl}'.format(
+        ircbot.send('PRIVMSG', target=channel, message='---------------')
+        ircbot.send('PRIVMSG', target=channel, message='This race\'s spoiler log: {spoilerurl}'.format(
             spoilerurl=spoilerlogurl
         ))
-        ircbot.send('PRIVMSG', target=player, message='---------------')
+        ircbot.send('PRIVMSG', target=channel, message='---------------')
     await send_discord_dms(
         sg_episode_id=sg_episode_id,
         discordbot=discordbot,
