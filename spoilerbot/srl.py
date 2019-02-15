@@ -177,9 +177,10 @@ async def gatekeeper_immediatestart(ircbot, discordbot, initiated_by_discordtag,
     await asyncio.sleep(.5)
     ready_players = await get_race_players(raceid)
     ircbot.send('PRIVMSG', target=channel, message='.quit')
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal {tournament} - {title}'.format(
+    ircbot.send('PRIVMSG', target=channel, message='.setgoal {tournament} - {title} - sgid{sg_episode_id}'.format(
         tournament=tournament,
         title=title,
+        sg_episode_id=sg_episode_id,
     ))
     await wait_for_race_start(raceid)
     ircbot.send('PRIVMSG', target=channel, message='Sending spoiler log to readied players.')
