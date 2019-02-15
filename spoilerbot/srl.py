@@ -92,33 +92,18 @@ async def spoilerstart(channel, author, ircbot, discordbot, loop, immediate=Fals
         hash=hash
     )
 
-    if immediate==False:
-        # run the gatekeeper!
-        await gatekeeper(
-            ircbot=ircbot,
-            discordbot=discordbot,
-            initiated_by_discordtag=initiated_by,
-            sg_episode_id=sg_episode_id,
-            channel=channel,
-            spoilerlogurl=spoiler_url,
-            title=title,
-            seed=seed,
-            raceid=raceid,
-            loop=loop
-        )
-    else:
-        await gatekeeper_immediatestart(
-            ircbot=ircbot,
-            discordbot=discordbot,
-            initiated_by_discordtag=initiated_by,
-            sg_episode_id=sg_episode_id,
-            channel=channel,
-            spoilerlogurl=spoiler_url,
-            title=title,
-            seed=seed,
-            raceid=raceid,
-            loop=loop
-        )
+    await gatekeeper_immediatestart(
+        ircbot=ircbot,
+        discordbot=discordbot,
+        initiated_by_discordtag=initiated_by,
+        sg_episode_id=sg_episode_id,
+        channel=channel,
+        spoilerlogurl=spoiler_url,
+        title=title,
+        seed=seed,
+        raceid=raceid,
+        loop=loop
+    )
 
 
 # This is a stripped down version of spoilerstart, mostly for posting the seed details in SRL chat
