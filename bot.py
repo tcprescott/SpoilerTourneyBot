@@ -148,6 +148,10 @@ async def mudora(ctx):
     await ctx.send('<:mudora:536293302689857567>')
 
 @discordbot.command(hidden=True)
+async def linkface(ctx):
+    await ctx.send('<:LinkFace:536293302689857567>')
+
+@discordbot.command(hidden=True)
 @commands.has_any_role('admin')
 async def throwerror(ctx):
     raise Exception
