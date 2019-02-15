@@ -157,57 +157,6 @@ async def spoilerseed(channel, author, ircbot, loop):
         code=' | '.join(await seed.code())
     ))
 
-# the holy grail of spaghetti in this bot
-async def gatekeeper(ircbot, discordbot, initiated_by_discordtag, sg_episode_id, channel, spoilerlogurl, title, seed, raceid, loop):
-    # in SRL, the goal should be different if this is a skirmish (indicated by the sg_episode_id of 0)
-    if sg_episode_id=='0':
-        tournament='ALTTPR Spoiler Race'
-    else:
-        tournament='ALTTPR Spoiler Tournament'
-
-    # bot should already be joined to the channel
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal {tournament} - {title} - {permalink} - [{code}]'.format(
-        tournament=tournament,
-        title=title,
-        permalink=await seed.url(),
-        code=' | '.join(await seed.code())
-    ))
-    ircbot.send('PRIVMSG', target=channel, message='.join')
-    await wait_for_ready_up(raceid)
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal {tournament} - {title} - Log Study In Progress'.format(
-        tournament=tournament,
-        title=title,
-    ))
-    await asyncio.sleep(1)
-    ready_players = await get_race_players(raceid)
-    ircbot.send('PRIVMSG', target=channel, message='Sending spoiler log to readied players.')
-    for player in ready_players['Ready']:
-        ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
-        ircbot.send('NOTICE', channel=channel, target=player, message='This race\'s spoiler log: {spoilerurl}'.format(
-            spoilerurl=spoilerlogurl
-        ))
-        ircbot.send('NOTICE', channel=channel, target=player, message='---------------')
-    await send_discord_dms(
-        sg_episode_id=sg_episode_id,
-        discordbot=discordbot,
-        title=title,
-        spoilerlogurl=spoilerlogurl,
-        initiated_by_discordtag=initiated_by_discordtag,
-    )
-
-    await countdown_timer(
-        duration_in_seconds=900,
-        srl_channel=channel,
-        loop=loop,
-        ircbot=ircbot,
-    )
-    ircbot.send('PRIVMSG', target=channel, message='GLHF! :mudora:')
-    ircbot.send('PRIVMSG', target=channel, message='.quit')
-    ircbot.send('PRIVMSG', target=channel, message='.setgoal {tournament} - {title}'.format(
-        tournament=tournament,
-        title=title,
-    ))
-
 # another version of the gatekeeper, except this one 
 async def gatekeeper_immediatestart(ircbot, discordbot, initiated_by_discordtag, sg_episode_id, channel, spoilerlogurl, title, seed, raceid, loop):
     # in SRL, the goal should be different if this is a skirmish (indicated by the sg_episode_id of 0)
