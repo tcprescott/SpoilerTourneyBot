@@ -94,6 +94,16 @@ async def write_json_to_disk(spoiler, seed):
     sorteddict['Light World']    = sort_dict(s['Light World'])
     sorteddict['Death Mountain'] = sort_dict(s['Death Mountain'])
     sorteddict['Dark World']     = sort_dict(s['Dark World'])
+
+    drops = get_seed_prizepacks(seed.patchdata)
+    sorteddict['Drops']          = {}
+    sorteddict['Drops']['PullTree'] = drops['PullTree']
+    sorteddict['Drops']['RupeeCrab'] = {}
+    sorteddict['Drops']['RupeeCrab']['Main'] = drops['RupeeCrab']['Main']
+    sorteddict['Drops']['RupeeCrab']['Final'] = drops['RupeeCrab']['Final']
+    sorteddict['Drops']['Stun'] = drops['Stun']
+    sorteddict['Drops']['FishSave'] = drops['FishSave']
+
     sorteddict['meta']           = s['meta']
     sorteddict['meta']['hash']   = seed.hash
     sorteddict['meta']['permalink'] = await seed.url()
@@ -112,3 +122,42 @@ def sort_dict(dict):
     for key in sorted(dict):
         sorteddict[key] = dict[key]
     return sorteddict
+
+def get_sprite_droppable(i):
+    spritemap = {
+        121: "Bee", 178: "BeeGood", 216: "Heart",
+        217: "RupeeGreen", 218: "RupeeBlue", 219: "RupeeRed",
+        220: "BombRefill1", 221: "BombRefill4", 222: "BombRefill8",
+        223: "MagicRefillSmall", 224: "MagicRefillFull",
+        225: "ArrowRefill5", 226: "ArrowRefill10",
+        227: "Fairy",
+    }
+    try: return spritemap[i]
+    except KeyError: return 'ERR: UNKNOWN'
+
+def get_seed_prizepacks(data):
+    d = {}
+    d['PullTree'] = {}
+    d['RupeeCrab'] = {}
+
+    stun_offset = '227731'
+    pulltree_offset = '981972'
+    rupeecrap_main_offset = '207304'
+    rupeecrab_final_offset = '207300'
+    fishsave_offset = '950988'
+
+    for patch in data['patch']:
+        if stun_offset in patch:
+            d['Stun'] = get_sprite_droppable(patch[stun_offset][0])
+        if pulltree_offset in patch:
+            d['PullTree']['Tier1'] = get_sprite_droppable(patch[pulltree_offset][0])
+            d['PullTree']['Tier2'] = get_sprite_droppable(patch[pulltree_offset][1])
+            d['PullTree']['Tier3'] = get_sprite_droppable(patch[pulltree_offset][2])
+        if rupeecrap_main_offset in patch:
+            d['RupeeCrab']['Main'] = get_sprite_droppable(patch[rupeecrap_main_offset][0])
+        if rupeecrab_final_offset in patch:
+            d['RupeeCrab']['Final'] = get_sprite_droppable(patch[rupeecrab_final_offset][0])
+        if fishsave_offset in patch:
+            d['FishSave'] = get_sprite_droppable(patch[fishsave_offset][0])
+    
+    return d
