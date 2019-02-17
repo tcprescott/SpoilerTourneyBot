@@ -34,17 +34,24 @@ async def async_req_general(url, method='get', reqparams=None, data=None, header
 
 async def async_req_post_json(url, json):
     async with aiohttp.ClientSession() as session:
-        async with session.post(url=url, json=json) as resp:
-            if 200 <= resp.status < 300:
-                data = await resp.text()
-                # have to either add dud variable or everything becomes an array and more lines to edit
-                return resp, data
-            else:
-                # print(resp.headers)
-                data = await resp.content()
-                print(data)
-                # print(resp.text)
-                return resp, "error"
+        for i in range(0,100):
+            while True:
+                try:
+                    async with session.post(url=url, json=json) as resp:
+                        if 200 <= resp.status < 300:
+                            data = await resp.text()
+                            # have to either add dud variable or everything becomes an array and more lines to edit
+                            return resp, data
+                        else:
+                            # print(resp.headers)
+                            data = await resp.content()
+                            print(data)
+                            # print(resp.text)
+                            return resp, "error"
+                except aiohttp.client_exceptions.ServerDisconnectedError:
+                    continue
+                break
+
 
 class alttprException(Exception):
     pass
