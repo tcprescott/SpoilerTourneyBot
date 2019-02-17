@@ -45,11 +45,11 @@ class SpoilerBotDatabase():
         await cursor.execute(sql, (sg_episode_id, srl_race_id, hash, title, permalink, spoiler_url, initiated_by))
         await self.conn.commit()
 
-    async def get_verification_keys(self):
+    async def get_verification_key(self, verification_key):
         cursor = await self.conn.cursor()
-        sql = 'SELECT verification_key FROM qualifier_requests'
-        result = await cursor.execute(sql)
-        return await cursor.fetchall()
+        sql = 'SELECT verification_key FROM qualifier_requests WHERE verification_key = %s'
+        result = await cursor.execute(sql, verification_key)
+        return await cursor.fetchone()
 
     async def get_bracket_race(self, srl_race_id):
         cursor = await self.conn.cursor()

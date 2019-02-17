@@ -157,9 +157,7 @@ async def generate_verification_key(loop):
         sbdb = db.SpoilerBotDatabase(loop)
         await sbdb.connect()
         flattened=[]
-        for keyrow in await sbdb.get_verification_keys():
-            flattened.append(keyrow[0])
-        if not key in flattened:
+        if await sbdb.get_verification_key(key) == None:
             await sbdb.record_verification_key(key)
             await sbdb.close()
             return key
