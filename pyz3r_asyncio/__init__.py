@@ -94,18 +94,15 @@ class alttpr():
                 )
                 #override whatever hash was provided and instead use what was gen'd
                 self.hash=json.loads(data)['hash']
-                await asyncio.sleep(1)
-
-            if self.append_json_extension:
-                url=self.seed_baseurl + '/' + self.hash + '.json'
+                url=self.baseurl + "/hash/" + self.hash
             else:
-                url=self.seed_baseurl + '/' + self.hash
+                url=self.seed_baseurl + '/' + self.hash + '.json'
             req, data = await async_req_general(
                 url=url
             )
             self.patchdata = json.loads(data)
 
-    async def settings(self):
+    async def list_settings(self):
         if self.randomizer == 'item':
             url=self.baseurl + "/randomizer/settings"
         elif self.randomizer == 'entrance':
