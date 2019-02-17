@@ -56,6 +56,13 @@ async def on_ready():
     except Exception as e:
         print(e)
 
+@discordbot.event
+async def on_message(message):
+    if discordbot.user in message.mentions:
+        await message.add_reaction(':sombreroguy:536296419699720222')
+        
+    await discordbot.process_commands(message)
+
 #automatically adds/removes roles based on the voice channels that are entered/exited
 #this should be its own function
 @discordbot.event
