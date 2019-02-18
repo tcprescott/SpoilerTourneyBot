@@ -156,7 +156,7 @@ async def mudora(ctx):
 
 @discordbot.command(hidden=True)
 async def linkface(ctx):
-    await ctx.send('<:LinkFace:545810445953400862>')
+    await ctx.send('<:LinkFace:545809659651686400>')
 
 @discordbot.command(hidden=True)
 @commands.has_any_role('admin')
