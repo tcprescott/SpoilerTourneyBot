@@ -303,7 +303,8 @@ async def post_multitwitch(channel, author, ircbot):
     #build a simpliified dictionary separated by state
     twitch_names = []
     for entrant in race['entrants']:
-        twitch_names.append(race['entrants'][entrant]['twitch'])
+        if not race['entrants'][entrant]['twitch'] == '':
+            twitch_names.append(race['entrants'][entrant]['twitch'])
     ircbot.send(
         'NOTICE',
         channel=channel,
