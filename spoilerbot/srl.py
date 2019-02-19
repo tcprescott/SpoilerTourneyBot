@@ -292,6 +292,27 @@ async def is_race_started(raceid):
     except KeyError:
         return False
 
+async def post_multitwitch(channel, author, ircbot):
+    if re.search('^#srl-[a-z0-9]{5}$',channel):
+        raceid = channel.partition('-')[-1]
+    else:
+        return
+    #get current race
+    race = await get_race(raceid)
+
+    #build a simpliified dictionary separated by state
+    twitch_names = []
+    for entrant in race['entrants']:
+        twitch_names.append(race['entrants'][entrant]['twitch'])
+    ircbot.send(
+        'NOTICE',
+        channel=channel,
+        target=author,
+        message='http://www.multitwitch.tv/{channels}'.format(
+            channels='/'.join(twitch_names)
+        )
+    )
+
 async def write_chat_log(channel, author, message):
     if channel == '#speedrunslive':
         return

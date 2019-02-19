@@ -258,6 +258,12 @@ async def message(nick, target, message, **kwargs):
             ircbot=ircbot,
             loop=loop
         )
+    elif message == '.multitwitch':
+        await srl.post_multitwitch(
+            channel=target,
+            author=nick,
+            ircbot=ircbot
+        )
 
 # log when NICKSERV accepts our auth request, mostly for troubleshooting failed starts of the SRL bot
 @ircbot.on('NOTICE')
