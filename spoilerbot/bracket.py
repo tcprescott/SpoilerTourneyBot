@@ -254,7 +254,9 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False, skir
         for user in participants:
             u = ctx.guild.get_member_named(user)
             if u == None:
-                #log this at sometime, for now just skip
+                await modlogchannel.send('Unable to find {user} for DM.'.format(
+                    user=user,
+                ))
                 pass
             else:
                 dm = u.dm_channel

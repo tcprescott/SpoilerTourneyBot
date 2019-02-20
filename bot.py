@@ -47,7 +47,7 @@ logger.addHandler(handler)
 @discordbot.event
 async def on_ready():
     try:
-        await discordbot.change_presence(game=discord.Game(name='$help for available cmds'))
+        await discordbot.change_presence(activity=discord.Game(name='$help for available cmds'))
         logger.info('discord - {username} - {userid}'.format(
             username=discordbot.user.name,
             userid=discordbot.user.id
