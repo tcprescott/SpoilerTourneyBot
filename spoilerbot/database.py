@@ -22,7 +22,7 @@ class SpoilerBotDatabase():
         conn = self.conn.close()
 
     async def get_qualifier_seed(self, id):
-        cursor = await self.conn.cursor()
+        cursor = await self.conn.cursor(aiomysql.DictCursor)
         sql = 'SELECT hash, spoilerlog FROM qualifier_seeds where id=%s'
         result = await cursor.execute(sql, (id))
         return await cursor.fetchone()
@@ -46,13 +46,13 @@ class SpoilerBotDatabase():
         await self.conn.commit()
 
     async def get_verification_key(self, verification_key):
-        cursor = await self.conn.cursor()
+        cursor = await self.conn.cursor(aiomysql.DictCursor)
         sql = 'SELECT verification_key FROM qualifier_requests WHERE verification_key = %s'
         result = await cursor.execute(sql, verification_key)
         return await cursor.fetchone()
 
     async def get_bracket_race(self, srl_race_id):
-        cursor = await self.conn.cursor()
+        cursor = await self.conn.cursor(aiomysql.DictCursor)
         sql = 'SELECT sg_episode_id, srl_race_id, hash, title, spoiler_url, initiated_by FROM bracket_races WHERE srl_race_id=%s'
         await cursor.execute(sql, (srl_race_id))
         return await cursor.fetchone()
@@ -75,7 +75,7 @@ class RandomizerDatabase():
         conn = self.conn.close()
 
     async def get_seed_spoiler(self, hashid):
-        cursor = await self.conn.cursor()
+        cursor = await self.conn.cursor(aiomysql.DictCursor)
         sql = 'SELECT spoiler FROM seeds where hash=%s'
         result = await cursor.execute(sql, (hashid))
         return await cursor.fetchone()

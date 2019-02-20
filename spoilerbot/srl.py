@@ -77,12 +77,12 @@ async def spoilerstart(channel, author, ircbot, discordbot, loop, immediate=Fals
         return
 
     # give each part of the racedata a friendly variable name to make things easier to read
-    sg_episode_id = racedata[0]
-    srl_race_id = racedata[1]
-    hash = racedata[2]
-    title = racedata[3]
-    spoiler_url = racedata[4]
-    initiated_by = racedata[5]
+    sg_episode_id = racedata['sg_episode_id']
+    srl_race_id = racedata['srl_race_id']
+    hash = racedata['hash']
+    title = racedata['title']
+    spoiler_url = racedata['spoiler_url']
+    initiated_by = racedata['initiated_by']
 
     # retrieve the seed details from the randomizer website
     seed = await pyz3r_asyncio.create_seed(
@@ -128,7 +128,7 @@ async def spoilerseed(channel, author, ircbot, loop):
         ircbot.send('PRIVMSG', target=channel, message='This race is not yet registered with SpoilerTourneyBot.  Please run $bracketrace command in discord.')
         return
 
-    hash = racedata[2]
+    hash = racedata['hash']
 
     seed = await pyz3r_asyncio.create_seed(
         randomizer='item',

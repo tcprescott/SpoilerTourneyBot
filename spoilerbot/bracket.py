@@ -37,7 +37,7 @@ async def practice(ctx, loop):
     spoiler_log = await rdb.get_seed_spoiler(seed.hash)
     await rdb.close()
 
-    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log[0], seed)
+    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log['spoiler'], seed)
 
     permalink = await seed.url()
     fscode = ' | '.join(await seed.code())
@@ -91,9 +91,8 @@ async def resend(ctx, loop, ircbot, channel):
 
     ircbot.send('JOIN', channel=channel)
 
-    hash = racedata[2]
-    player1 = racedata[3]
-    player2 = racedata[4]
+    hash = racedata['hash']
+    title = racedata['title']
 
     seed = await pyz3r_asyncio.create_seed(
         randomizer='item',
@@ -104,7 +103,7 @@ async def resend(ctx, loop, ircbot, channel):
 
     msg = await generate_bracket_dm(
         seed=seed,
-        players=[player1, player2],
+        players=title,
         channel=channel,
         )
 
@@ -184,7 +183,7 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False, skir
             ))
             return
 
-        title = ' v. '.join(players)
+        title = ' vs. '.join(players)
         
     else:
         title = arg1
@@ -212,7 +211,7 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False, skir
     spoiler_log = await rdb.get_seed_spoiler(seed.hash)
     await rdb.close()
 
-    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log[0], seed)
+    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log['spoiler'], seed)
 
     modlogchannel = ctx.guild.get_channel(config['log_channel'][ctx.guild.id])
     msg = 'Race {title}:\n\n' \
@@ -249,7 +248,7 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False, skir
     else:
         msg = await generate_bracket_dm(
             seed=seed,
-            players=players,
+            title=title,
             channel=channel,
             )
         for user in participants:
@@ -268,8 +267,8 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False, skir
 
     await ctx.message.add_reaction('👍')
 
-async def generate_bracket_dm(seed, players, channel):
-    msg = 'Details for race {player1} vs {player2}:\n\n' \
+async def generate_bracket_dm(seed, title, channel):
+    msg = 'Details for race {title}:\n\n' \
     'SRL Channel: {srlchannel}\n' \
     'Permalink: {permalink}\n' \
     'Code: [{fscode}]\n\n' \
@@ -277,8 +276,7 @@ async def generate_bracket_dm(seed, players, channel):
     'The bot will wait for all joined players to be readied up, and any human gatekeepers to leave (such as the restreamer).\n' \
     'At that point a link to the spoiler log and a 15 minute countdown timer will commence.  If you do not get the spoiler log in SRL, DM an admin immediately!\n\n' \
     'Good luck <:mudora:536293302689857567>'.format(
-        player1=players[0],
-        player2=players[1],
+        title=title,
         srlchannel=channel,
         permalink=await seed.url(),
         fscode=' | '.join(await seed.code()))
@@ -300,11 +298,10 @@ async def generate_skirmish_msg(seed, title, channel):
     return msg
 
 
-async def generate_bracket_spoiler_dm(participants, players, spoilerurl):
-    msg = 'Spoiler log for {player1} vs {player2}:\n\n' \
+async def generate_bracket_spoiler_dm(participants, title, spoilerurl):
+    msg = 'Spoiler log for {title}:\n\n' \
         '{spoilerurl}'.format(
-            player1=players[0],
-            player2=players[1],
+            title=title,
             spoilerurl=spoilerurl,
         )
     return msg

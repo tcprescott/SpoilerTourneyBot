@@ -54,10 +54,10 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
         randomizer='item',
         baseurl=config['alttpr_website']['baseurl'],
         seed_baseurl=config['alttpr_website']['baseurl_seed'],
-        hash=qualifier_seed[0]
+        hash=qualifier_seed['hash']
     )
 
-    spoilerlog = qualifier_seed[1]
+    spoilerlog = qualifier_seed['spoilerlog']
     verificationkey = await generate_verification_key(loop)
 
 
@@ -207,7 +207,7 @@ async def gen_qualifier_seed(ctx, loop, seednum=None):
     spoiler_log = await rdb.get_seed_spoiler(seed.hash)
     await rdb.close()
 
-    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log[0], seed)
+    spoiler_log_url = await helpers.write_json_to_disk(spoiler_log['spoiler'], seed)
 
     await spdb.insert_qualifier_seed(
         id=seednum,
