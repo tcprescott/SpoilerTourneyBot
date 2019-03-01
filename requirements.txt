@@ -12,3 +12,4 @@ ircmessage
 aiofiles
 aiomysql
 six<1.11,>=1.10.0
+python-dateutil
