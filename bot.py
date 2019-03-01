@@ -198,6 +198,42 @@ async def genqualifier(ctx, seednum=''):
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 
+import spoilerbot.database as db
+from datetime import datetime
+from dateutil import tz
+from dateutil.relativedelta import relativedelta
+
+@discordbot.command(
+    help='Get current deadline.'
+)
+async def deadline(ctx, timezone='US/Eastern'):
+    await ctx.message.add_reaction('⌚')
+
+    sbdb = db.SpoilerBotDatabase(loop)
+    await sbdb.connect()
+    deadline = await sbdb.get_current_deadline()
+
+    if deadline == None:
+        await ctx.send('No deadline current exists.')
+        await ctx.message.add_reaction('👎')
+
+    now = datetime.utcnow().replace(tzinfo=tz.tzutc())
+    end = deadline['end'].replace(tzinfo=tz.tzutc())
+    diff = relativedelta(end, now)
+
+    await ctx.send(deadline['message'].format(
+        time=end.astimezone(tz.gettz(timezone)).strftime('%b %d %Y at %I:%M:%S %p %Z'),
+        remain='{days} days, {hours} hours, {minutes} minutes, and {seconds} seconds to go'.format(
+            days=diff.days,
+            hours=diff.hours,
+            minutes=diff.minutes,
+            seconds=diff.seconds,
+        ),
+    ))
+
+    await ctx.message.add_reaction('👍')
+    await ctx.message.remove_reaction('⌚',ctx.bot.user)
+
 #handle errors, using a common handler
 #also handles CheckFailures, in this case it'll react with a prohibitory symbol
 @discordbot.event

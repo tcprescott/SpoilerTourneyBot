@@ -57,6 +57,12 @@ class SpoilerBotDatabase():
         await cursor.execute(sql, (srl_race_id))
         return await cursor.fetchone()
 
+    async def get_current_deadline(self):
+        cursor = await self.conn.cursor(aiomysql.DictCursor)
+        sql = 'SELECT start, end, message FROM deadlines WHERE start <= NOW() and end >= NOW()'
+        await cursor.execute(sql)
+        return await cursor.fetchone()
+
 class RandomizerDatabase():
     def __init__(self,loop):
         self.loop = loop
