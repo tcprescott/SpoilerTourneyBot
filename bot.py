@@ -204,9 +204,12 @@ from dateutil import tz
 from dateutil.relativedelta import relativedelta
 
 @discordbot.command(
-    help='Get current deadline.'
+    help='Get current deadline.\n'
+        'Timezone is the timezone name found in the TZ database.\n'
+        'See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones',
+    brief='Get current deadline.'
 )
-async def deadline(ctx, timezone='US/Eastern'):
+async def deadline(ctx, timezone='America/New_York'):
     await ctx.message.add_reaction('⌚')
 
     sbdb = db.SpoilerBotDatabase(loop)
