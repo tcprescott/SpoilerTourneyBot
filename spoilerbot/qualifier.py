@@ -63,7 +63,7 @@ async def qualifier_cmd(ctx, arg1, logger, loop):
 
     permalink = await seed.url()
     fscode = ' | '.join(await seed.code())
-    timestamp = str(datetime.now(tz))
+    timestamp = str(datetime.now(tz).replace(microsecond=0))
 
     logger.info('Qualifier Generated - {servername} - {channelname} - {player} - {seednum} - {verificationkey}'.format(
         servername = ctx.guild.name,

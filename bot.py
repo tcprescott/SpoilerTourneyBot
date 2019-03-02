@@ -17,6 +17,7 @@ import spoilerbot.bracket as bracket
 import spoilerbot.helpers as helpers
 import spoilerbot.srl as srl
 import spoilerbot.sg as sg
+import spoilerbot.checkstream as cs
 
 # our special asyncio version of pyz3r
 import pyz3r_asyncio
@@ -232,6 +233,39 @@ async def deadline(ctx, timezone='America/New_York'):
             minutes=diff.minutes,
             seconds=diff.seconds,
         ),
+    ))
+
+    await ctx.message.add_reaction('👍')
+    await ctx.message.remove_reaction('⌚',ctx.bot.user)
+
+@discordbot.command(
+    help='Get current deadline.\n'
+        'Timezone is the timezone name found in the TZ database.\n'
+        'See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones',
+    brief='Get the stream start date from twitch or youtube.'
+)
+@commands.has_any_role('admin','qual-validator')
+@helpers.has_any_channel('admin-chat','qual-validators','bot-testing')
+async def checkstream(ctx, service, id):
+    await ctx.message.add_reaction('⌚')
+
+    if service=='twitch':
+        date=await cs.get_twitch_video_published(id)
+    elif service=='youtube':
+        date=await cs.get_youtube_stream_published(id)
+    else:
+        await ctx.send('Must specify twitch or youtube for service!')
+        await ctx.message.add_reaction('👎')
+        return
+
+    if date == None:
+        await ctx.send('Specified id not present or is not a livestream.')
+        await ctx.message.add_reaction('👎')
+        return
+
+    await ctx.send('{mention}, the stream was started `{date}`'.format(
+        mention=ctx.author.mention,
+        date=date.astimezone(tz.gettz('America/New_York'))
     ))
 
     await ctx.message.add_reaction('👍')
