@@ -219,7 +219,9 @@ async def deadline(ctx, timezone='America/New_York'):
 
     if deadline == None:
         await ctx.send('No deadline current exists.')
+
         await ctx.message.add_reaction('👎')
+        await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
     now = datetime.utcnow().replace(tzinfo=tz.tzutc())
     end = deadline['end'].replace(tzinfo=tz.tzutc())
@@ -239,10 +241,10 @@ async def deadline(ctx, timezone='America/New_York'):
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 @discordbot.command(
-    help='Get current deadline.\n'
-        'Timezone is the timezone name found in the TZ database.\n'
-        'See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones',
-    brief='Get the stream start date from twitch or youtube.'
+    help='Get a stream start timestamp.\n\n'
+        'service = youtube or twitch.\n'
+        'id = the video id in the URL',
+    brief='Get a stream start timestamp.'
 )
 @commands.has_any_role('admin','qual-validator')
 @helpers.has_any_channel('admin-chat','qual-validators','bot-testing')
@@ -256,11 +258,13 @@ async def checkstream(ctx, service, id):
     else:
         await ctx.send('Must specify twitch or youtube for service!')
         await ctx.message.add_reaction('👎')
+        await ctx.message.remove_reaction('⌚',ctx.bot.user)
         return
 
     if date == None:
         await ctx.send('Specified id not present or is not a livestream.')
         await ctx.message.add_reaction('👎')
+        await ctx.message.remove_reaction('⌚',ctx.bot.user)
         return
 
     await ctx.send('{mention}, the stream was started `{date}`'.format(
@@ -277,6 +281,10 @@ async def checkstream(ctx, service, id):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
         await ctx.message.add_reaction('🚫')
+        return
+    elif isinstance(error, commands.errors.MissingRequiredArgument):
+        await ctx.send(error)
+        await ctx.message.add_reaction('👎')
         return
     if isinstance(error, commands.CommandNotFound):
         return

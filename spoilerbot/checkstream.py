@@ -15,9 +15,6 @@ async def async_req_general(url, method='get', reqparams=None, data=None, header
                 # have to either add dud variable or everything becomes an array and more lines to edit
                 return resp, data
             else:
-                # print(resp.headers)
-                data = await resp.content()
-                print(data)
                 # print(resp.text)
                 return resp, "error"
 
