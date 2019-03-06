@@ -62,3 +62,4 @@ venv/
 .bashrc
 .cloud-locale-test.skip
 .vscode/settings.json
+.vscode/launch.json
