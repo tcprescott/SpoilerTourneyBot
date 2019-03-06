@@ -29,6 +29,7 @@ discordbot = commands.Bot(
     command_prefix=config['cmd_prefix'],
 )
 discordbot.load_extension("spoilerbot.verifiers")
+discordbot.load_extension("spoilerbot.eggs")
 
 # irc bot using bottom, an very, very low level async irc client
 ircbot = bottom.Client(
@@ -142,28 +143,6 @@ async def resend(ctx, channel=None):
     await bracket.resend(ctx, loop, ircbot, channel)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
-# bunch of fluff because I like fluff
-@discordbot.command(hidden=True)
-async def pizza(ctx):
-    await ctx.send('🍕')
-
-@discordbot.command(hidden=True)
-async def beer(ctx):
-    await ctx.send('🍺')
-
-@discordbot.command(hidden=True)
-async def mudora(ctx):
-    await ctx.send('<:mudora:536293302689857567>')
-
-@discordbot.command(hidden=True)
-async def linkface(ctx):
-    await ctx.send('<:LinkFace:545809659651686400>')
-
-@discordbot.command(hidden=True)
-@commands.has_any_role('admin')
-async def throwerror(ctx):
-    raise Exception
-
 #qualifier command, this has been condensed and relocated to the spoilerbot/qualifier.py
 #we also make sure that only admins, mods, and qualifier players can run this command, and that it is run in the qualifier channel
 @discordbot.command(
@@ -197,7 +176,6 @@ async def genqualifier(ctx, seednum=''):
         loop=loop
     )
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
-
 
 import spoilerbot.database as db
 from datetime import datetime
@@ -239,9 +217,6 @@ async def deadline(ctx, timezone='America/New_York'):
 
     await ctx.message.add_reaction('👍')
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
-
-
-
 
 #handle errors, using a common handler
 #also handles CheckFailures, in this case it'll react with a prohibitory symbol
