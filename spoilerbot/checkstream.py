@@ -39,7 +39,7 @@ async def get_youtube_stream_published(id):
         url='https://www.googleapis.com/youtube/v3/videos',
         reqparams={
             'id': id,
-            'key': config['youtube_credcs']['apikey'],
+            'key': config['youtube_creds']['apikey'],
             'part': 'liveStreamingDetails'
         }
     )
