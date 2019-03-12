@@ -19,7 +19,7 @@ import spoilerbot.config as cfg
 config = cfg.get_config()
 
 async def qualifier_cmd(ctx, arg1, logger, loop):
-    tz = timezone('EST')
+    tz = timezone('US/Eastern')
     logger.info('Qualifier Requested - {servername} - {channelname} - {player} - {seednum}'.format(
         servername = ctx.guild.name,
         channelname = ctx.channel.name,
