@@ -1,6 +1,7 @@
 from oauth2client.service_account import ServiceAccountCredentials
 import math
 import asyncio
+import bisect
 
 import random, string
 import json
@@ -104,6 +105,8 @@ async def write_json_to_disk(spoiler, seed):
     sorteddict['Drops']['Stun'] = drops['Stun']
     sorteddict['Drops']['FishSave'] = drops['FishSave']
 
+    sorteddict['Special']['DiggingGameDigs'] = seek_patch_data(seed.patchdata['patch'], 982421, 1)[0]
+
     sorteddict['meta']           = s['meta']
     sorteddict['meta']['hash']   = seed.hash
     sorteddict['meta']['permalink'] = await seed.url()
@@ -161,3 +164,38 @@ def get_seed_prizepacks(data):
             d['FishSave'] = get_sprite_droppable(patch[fishsave_offset][0])
     
     return d
+
+def seek_patch_data(patches, offset, bytes):
+    """[summary]
+    
+    Arguments:
+        patches {list} -- a list of dictionaries depicting raw patch data
+        offset {int} -- a decimal integer of the offset to look for
+        bytes {int} -- the number of bytes to retrieve
+    
+    Raises:
+        ValueError -- raised if the offset could not be found
+    
+    Returns:
+        list -- a list of bytes of the requested offset
+    """
+
+    offsetlist = []
+    for patch in patches:
+        for key, value in patch.items():
+            offsetlist.append(int(key))
+    offsetlist_sorted = sorted(offsetlist)
+    i = bisect.bisect_left(offsetlist_sorted, offset)
+    if i:
+        if offsetlist_sorted[i] == offset:
+            seek = str(offset)
+            for patch in patches:
+                if seek in patch:
+                    return patch[seek][:bytes]
+        else:
+            left_slice = offset - offsetlist_sorted[i-1]
+            for patch in patches:
+                seek = str(offsetlist_sorted[i-1])
+                if seek in patch:
+                    return patch[seek][left_slice:left_slice + bytes]
+    raise ValueError
