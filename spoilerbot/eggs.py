@@ -33,7 +33,7 @@ class Eggs:
     @commands.command(hidden=True)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def validation(self, ctx):
-        await ctx.send('<:validate:559467234117025822>')
+        await ctx.send('<:validate:559467160469241857>')
 
     @commands.command(hidden=True)
     @commands.cooldown(1, 30, commands.BucketType.channel)
