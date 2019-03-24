@@ -149,8 +149,8 @@ async def resend(ctx, channel=None):
     help='Request a verification key to begin a qualifier run.\n\n*seednum* is the number of the seed you wish to play.',
     brief='Request a qualifier verification key'
 )
-@commands.has_any_role('admin','moderator')
-@helpers.has_any_channel('qualifier','bot-testing')
+@commands.has_any_role('admin','moderator','qualifier')
+@helpers.has_any_channel('bot-testing','qualifier')
 async def qualifier(ctx, seednum=''):
     await ctx.message.add_reaction('⌚')
     await qual.qualifier_cmd(
