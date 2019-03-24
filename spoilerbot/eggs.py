@@ -41,11 +41,6 @@ class Eggs:
         await ctx.send('yw')
 
     @commands.command(hidden=True)
-    @commands.cooldown(1, 30, commands.BucketType.channel)
-    async def validation(self, ctx):
-        await ctx.send('no')
-
-    @commands.command(hidden=True)
     @commands.has_any_role('admin')
     async def throwerror(self, ctx):
         raise Exception
