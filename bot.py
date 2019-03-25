@@ -149,8 +149,8 @@ async def resend(ctx, channel=None):
     help='Request a verification key to begin a qualifier run.\n\n*seednum* is the number of the seed you wish to play.',
     brief='Request a qualifier verification key'
 )
-@commands.has_any_role('admin','moderator','qualifier')
-@helpers.has_any_channel('bot-testing','qualifier')
+@commands.has_any_role('admin','moderator')
+@helpers.has_any_channel('bot-testing')
 async def qualifier(ctx, seednum=''):
     await ctx.message.add_reaction('⌚')
     await qual.qualifier_cmd(
@@ -224,15 +224,15 @@ async def deadline(ctx, timezone='America/New_York'):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
         await ctx.message.add_reaction('🚫')
-        return
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         await ctx.send(error)
         await ctx.message.add_reaction('👎')
-        return
-    if isinstance(error, commands.CommandNotFound):
-        return
-    # await ctx.send(error)
-    await helpers.error_handle(ctx, error, logger)
+    elif isinstance(error, commands.CommandNotFound):
+        pass
+    elif isinstance(error, commands.errors.CommandOnCooldown):
+        pass
+    else:
+        await helpers.error_handle(ctx, error, logger)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 #Bot should only respond to DMs for the practice command.  Other commands should be ignored.
