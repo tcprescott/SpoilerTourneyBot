@@ -30,6 +30,7 @@ discordbot = commands.Bot(
 )
 discordbot.load_extension("spoilerbot.verifiers")
 discordbot.load_extension("spoilerbot.eggs")
+discordbot.load_extension("spoilerbot.admin")
 
 # irc bot using bottom, an very, very low level async irc client
 ircbot = bottom.Client(
