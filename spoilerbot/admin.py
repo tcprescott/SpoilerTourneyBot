@@ -17,4 +17,4 @@ def setup(bot):
     bot.add_cog(Admin(bot))
 
 def is_twitch_url(m):
-    return not re.findall('^http[s]?:\/\/clips\.twitch\.tv\/[A-Za-z0-9]*$', m.content)
+    return not re.findall('http[s]?:\/\/clips\.twitch\.tv\/[A-Za-z0-9]*', m.content)
