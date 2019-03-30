@@ -82,6 +82,6 @@ class RandomizerDatabase():
 
     async def get_seed_spoiler(self, hashid):
         cursor = await self.conn.cursor(aiomysql.DictCursor)
-        sql = 'SELECT spoiler FROM seeds where hash=%s'
+        sql = 'SELECT spoiler FROM seeds where hash=%s ORDER BY id DESC LIMIT 1'
         result = await cursor.execute(sql, (hashid))
         return await cursor.fetchone()
