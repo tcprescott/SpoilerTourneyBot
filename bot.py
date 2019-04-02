@@ -94,7 +94,7 @@ async def srlcmd(ctx, op, channel=None, target=None, message=None):
     help='Begin a race to be restreamed.  Should be ran by a restreamer or broadcast operator.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
     brief='Begin a restreamed race'
 )
-@commands.has_any_role('admin','moderator','bracket','sg-crew')
+@commands.has_any_role('admin','moderator','bracket','speedgaming','sg-crew')
 @helpers.has_any_channel('brackets','speedgaming','restreamer','bot-testing')
 async def bracketrace(ctx, sg_race_id=None, srl_channel=None):
     await ctx.message.add_reaction('⌚')
