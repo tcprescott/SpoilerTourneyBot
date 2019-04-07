@@ -182,12 +182,14 @@ async def gatekeeper_immediatestart(ircbot, discordbot, initiated_by_discordtag,
             spoilerurl=spoilerlogurl
         ))
         ircbot.send('PRIVMSG', target=channel, message='---------------')
-    await send_discord_dms(
-        sg_episode_id=sg_episode_id,
-        discordbot=discordbot,
-        title=title,
-        spoilerlogurl=spoilerlogurl,
-        initiated_by_discordtag=initiated_by_discordtag,
+    loop.create_task(
+        send_discord_dms(
+            sg_episode_id=sg_episode_id,
+            discordbot=discordbot,
+            title=title,
+            spoilerlogurl=spoilerlogurl,
+            initiated_by_discordtag=initiated_by_discordtag,
+        )
     )
     ircbot.send('PRIVMSG', target=channel, message='GLHF! :mudora:')
     await countdown_timer(
