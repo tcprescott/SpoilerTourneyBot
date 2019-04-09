@@ -89,6 +89,10 @@ async def srlcmd(ctx, op, channel=None, target=None, message=None):
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
     await ctx.message.add_reaction('👍')
 
+@discordbot.command()
+@commands.has_any_role('admin')
+async def irc_disconnect(ctx):
+    ircbot.trigger("client_disconnect")
 
 #the bracketrace command!
 @discordbot.command(
@@ -296,6 +300,11 @@ async def message(nick, target, message, **kwargs):
 def notice(message, **kwargs):
     if message=='Password accepted - you are now recognized.':
         logger.info('irc - successfully auth\'d with nickserv')
+
+@ircbot.on('client_disconnect')
+async def reconnect():
+    await asyncio.sleep(3)
+    await ircbot.connect()
 
 #create the main loop and all of tha that fun stuff
 if __name__ == '__main__':
