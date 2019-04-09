@@ -15,22 +15,39 @@ import aiofiles
 import spoilerbot.config as cfg
 config = cfg.get_config()
 
-async def practice(ctx, loop):
-    seed = await pyz3r_asyncio.create_seed(
-        randomizer='item', # optional, defaults to item
-        baseurl=config['alttpr_website']['baseurl'],
-        seed_baseurl=config['alttpr_website']['baseurl_seed'],
-        settings={
-            "difficulty": "normal",
-            "enemizer": False,
-            "logic": "NoGlitches",
-            "mode": "open",
-            "tournament": True,
-            "variation": "none",
-            "weapons": "randomized",
-            "lang": "en"
-        }
-    )
+async def practice(ctx, loop, mode='open'):
+    if mode=='inverted':
+        seed = await pyz3r_asyncio.create_seed(
+            randomizer='item', # optional, defaults to item
+            baseurl=config['alttpr_website']['baseurl'],
+            seed_baseurl=config['alttpr_website']['baseurl_seed'],
+            settings={
+                "difficulty": "normal",
+                "enemizer": False,
+                "logic": "NoGlitches",
+                "mode": "inverted",
+                "tournament": True,
+                "variation": "none",
+                "weapons": "randomized",
+                "lang": "en"
+            }
+        )
+    else:
+        seed = await pyz3r_asyncio.create_seed(
+            randomizer='item', # optional, defaults to item
+            baseurl=config['alttpr_website']['baseurl'],
+            seed_baseurl=config['alttpr_website']['baseurl_seed'],
+            settings={
+                "difficulty": "normal",
+                "enemizer": False,
+                "logic": "NoGlitches",
+                "mode": "open",
+                "tournament": True,
+                "variation": "none",
+                "weapons": "randomized",
+                "lang": "en"
+            }
+        )
 
     rdb = db.RandomizerDatabase(loop)
     await rdb.connect()
@@ -114,7 +131,7 @@ async def resend(ctx, loop, ircbot, channel):
 
     await ctx.message.add_reaction('👍')
 
-async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False, skirmish=False):
+async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, mode='open', nosrl=False, skirmish=False):
     if nosrl==False:
         if arg1==None:
             await ctx.message.add_reaction('👎')
@@ -189,22 +206,38 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, nosrl=False, skir
         title = arg1
         sg_episode_id = 0
 
-
-    seed = await pyz3r_asyncio.create_seed(
-        randomizer='item', # optional, defaults to item
-        baseurl=config['alttpr_website']['baseurl'],
-        seed_baseurl=config['alttpr_website']['baseurl_seed'],
-        settings={
-            "difficulty": "normal",
-            "enemizer": False,
-            "logic": "NoGlitches",
-            "mode": "open",
-            "tournament": True,
-            "variation": "none",
-            "weapons": "randomized",
-            "lang": "en"
-        }
-    )
+    if mode=='inverted':
+        seed = await pyz3r_asyncio.create_seed(
+            randomizer='item', # optional, defaults to item
+            baseurl=config['alttpr_website']['baseurl'],
+            seed_baseurl=config['alttpr_website']['baseurl_seed'],
+            settings={
+                "difficulty": "normal",
+                "enemizer": False,
+                "logic": "NoGlitches",
+                "mode": "inverted",
+                "tournament": True,
+                "variation": "none",
+                "weapons": "randomized",
+                "lang": "en"
+            }
+        )
+    else:
+        seed = await pyz3r_asyncio.create_seed(
+            randomizer='item', # optional, defaults to item
+            baseurl=config['alttpr_website']['baseurl'],
+            seed_baseurl=config['alttpr_website']['baseurl_seed'],
+            settings={
+                "difficulty": "normal",
+                "enemizer": False,
+                "logic": "NoGlitches",
+                "mode": "open",
+                "tournament": True,
+                "variation": "none",
+                "weapons": "randomized",
+                "lang": "en"
+            }
+        )
 
     rdb = db.RandomizerDatabase(loop)
     await rdb.connect()

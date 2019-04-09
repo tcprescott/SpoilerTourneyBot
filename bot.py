@@ -119,9 +119,9 @@ async def nosrlrace(ctx, sg_race_id=None):
     brief='Begin a practice skirmish',
 )
 @helpers.has_any_channel('practice_racing','speedgaming','bot-console','bot-testing')
-async def skirmish(ctx, title=None, srl_channel=None):
+async def skirmish(ctx, title=None, srl_channel=None, mode='open'):
     await ctx.message.add_reaction('⌚')
-    await bracket.bracketrace(ctx=ctx, arg1=title, arg2=srl_channel, loop=loop, ircbot=ircbot, skirmish=True)
+    await bracket.bracketrace(ctx=ctx, arg1=title, arg2=srl_channel, mode=mode, loop=loop, ircbot=ircbot, skirmish=True)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 # generate practice seeds with tournament spoiler logs
@@ -129,9 +129,9 @@ async def skirmish(ctx, title=None, srl_channel=None):
     help='Generates a seed and sends the requestor a DM w/ the spoiler log, permalink, and code.  Intended for practice.',
     brief='Generate a practice seed.'
 )
-async def practice(ctx):
+async def practice(ctx, mode='open'):
     await ctx.message.add_reaction('⌚')
-    await bracket.practice(ctx=ctx, loop=loop)
+    await bracket.practice(ctx=ctx, mode=mode, loop=loop)
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 # lets commentators, trackers, sg-crew, restreamers, or players get sent a copy of the seed and code (not spoiler log)
