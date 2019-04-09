@@ -1,6 +1,6 @@
 from discord.ext import commands
 
-class Eggs:
+class Eggs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 

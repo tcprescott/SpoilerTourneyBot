@@ -6,7 +6,7 @@ from dateutil import tz
 import spoilerbot.checkstream as cs
 import re
 
-class Verifiers:
+class Verifiers(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
