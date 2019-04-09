@@ -89,6 +89,12 @@ async def srlcmd(ctx, op, channel=None, target=None, message=None):
     await ctx.message.remove_reaction('⌚',ctx.bot.user)
     await ctx.message.add_reaction('👍')
 
+#Allow admins (probably Synack) to reconnect the IRC bot to SRL if it disconnects for some reason.
+@discordbot.command()
+@commands.has_any_role('admin')
+async def reconnectirc(ctx):
+    loop.create_task(ircbot.connect())
+
 #the bracketrace command!
 @discordbot.command(
     help='Begin a race to be restreamed.  Should be ran by a restreamer or broadcast operator.\n\nsg_race_id should be the ID of the race on the SG schedule\nsrl_channel should be the full channel name of the SRL race (e.g. #srl-abc12)',
