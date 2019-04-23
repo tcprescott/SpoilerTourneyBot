@@ -40,7 +40,7 @@ ircbot = bottom.Client(
 )
 
 #setup logging configuration
-logger = logging.getLogger('spoilerbot')
+logger = logging.getLogger('discord')
 logger.setLevel(logging.INFO)
 handler = handlers.TimedRotatingFileHandler(filename='logs/discord.log', encoding='utf-8', when='D', interval=1, backupCount=30)
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
