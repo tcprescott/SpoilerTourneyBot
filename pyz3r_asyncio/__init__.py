@@ -3,6 +3,7 @@ import asyncio
 import json
 import itertools
 import hashlib
+import bisect
 from time import sleep
 
 async def create_seed(
@@ -136,11 +137,12 @@ class alttpr():
             29: 'Map', 30: 'Compass', 31: 'Big Key'
         }
 
-        for patch in self.patchdata['patch']:
-            seek = '1573395'
-            if seek in patch:
-                p=list(map(lambda x: code_map[x], patch[seek][2:]))
-                return p
+        codebytes = seek_patch_data(self.patchdata['patch'], 1573397, 5)
+        if len(codebytes) != 5:
+            return ["Bow","Boomerang","Hookshot","Bombs","Mushroom"]
+        else:
+            p=list(map(lambda x: code_map[x], codebytes))
+            return [p[0], p[1], p[2], p[3], p[4]]
 
 
     async def url(self):
@@ -411,3 +413,38 @@ class alttpr():
             }
         ]
         return patch
+
+def seek_patch_data(patches, offset, bytes):
+    """[summary]
+    
+    Arguments:
+        patches {list} -- a list of dictionaries depicting raw patch data
+        offset {int} -- a decimal integer of the offset to look for
+        bytes {int} -- the number of bytes to retrieve
+    
+    Raises:
+        ValueError -- raised if the offset could not be found
+    
+    Returns:
+        list -- a list of bytes of the requested offset
+    """
+
+    offsetlist = []
+    for patch in patches:
+        for key, value in patch.items():
+            offsetlist.append(int(key))
+    offsetlist_sorted = sorted(offsetlist)
+    i = bisect.bisect_left(offsetlist_sorted, offset)
+    if i:
+        if offsetlist_sorted[i] == offset:
+            seek = str(offset)
+            for patch in patches:
+                if seek in patch:
+                    return patch[seek][:bytes]
+        else:
+            left_slice = offset - offsetlist_sorted[i-1]
+            for patch in patches:
+                seek = str(offsetlist_sorted[i-1])
+                if seek in patch:
+                    return patch[seek][left_slice:left_slice + bytes]
+    raise ValueError

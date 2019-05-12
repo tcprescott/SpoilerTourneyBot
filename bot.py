@@ -226,20 +226,20 @@ async def deadline(ctx, timezone='America/New_York'):
 
 #handle errors, using a common handler
 #also handles CheckFailures, in this case it'll react with a prohibitory symbol
-@discordbot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CheckFailure):
-        await ctx.message.add_reaction('🚫')
-    elif isinstance(error, commands.errors.MissingRequiredArgument):
-        await ctx.send(error)
-        await ctx.message.add_reaction('👎')
-    elif isinstance(error, commands.CommandNotFound):
-        pass
-    elif isinstance(error, commands.errors.CommandOnCooldown):
-        pass
-    else:
-        await helpers.error_handle(ctx, error, logger)
-    await ctx.message.remove_reaction('⌚',ctx.bot.user)
+# @discordbot.event
+# async def on_command_error(ctx, error):
+#     if isinstance(error, commands.CheckFailure):
+#         await ctx.message.add_reaction('🚫')
+#     elif isinstance(error, commands.errors.MissingRequiredArgument):
+#         await ctx.send(error)
+#         await ctx.message.add_reaction('👎')
+#     elif isinstance(error, commands.CommandNotFound):
+#         pass
+#     elif isinstance(error, commands.errors.CommandOnCooldown):
+#         pass
+#     else:
+#         await helpers.error_handle(ctx, error, logger)
+#     await ctx.message.remove_reaction('⌚',ctx.bot.user)
 
 #Bot should only respond to DMs for the practice command.  Other commands should be ignored.
 @discordbot.check
