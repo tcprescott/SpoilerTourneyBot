@@ -48,6 +48,22 @@ async def practice(ctx, loop, mode='open'):
                 "lang": "en"
             }
         )
+    elif mode=='nologickeys':
+        seed = await pyz3r_asyncio.create_seed(
+            randomizer='item', # optional, defaults to item
+            baseurl=config['alttpr_website']['baseurl'],
+            seed_baseurl=config['alttpr_website']['baseurl_seed'],
+            settings={
+                "difficulty": "normal",
+                "enemizer": False,
+                "logic": "None",
+                "mode": "open",
+                "tournament": True,
+                "variation": "key-sanity",
+                "weapons": "randomized",
+                "lang": "en"
+            }
+        )
     else:
         seed = await pyz3r_asyncio.create_seed(
             randomizer='item', # optional, defaults to item
@@ -250,6 +266,22 @@ async def bracketrace(ctx, loop, ircbot, arg1=None, arg2=None, mode='open', nosr
                 "mode": "open",
                 "tournament": True,
                 "variation": "none",
+                "weapons": "randomized",
+                "lang": "en"
+            }
+        )
+    elif mode=='nologickeys':
+        seed = await pyz3r_asyncio.create_seed(
+            randomizer='item', # optional, defaults to item
+            baseurl=config['alttpr_website']['baseurl'],
+            seed_baseurl=config['alttpr_website']['baseurl_seed'],
+            settings={
+                "difficulty": "normal",
+                "enemizer": False,
+                "logic": "None",
+                "mode": "open",
+                "tournament": True,
+                "variation": "key-sanity",
                 "weapons": "randomized",
                 "lang": "en"
             }
